@@ -1,4 +1,5 @@
 # mcp-server-motherduck MCP server
+[![smithery badge](https://smithery.ai/badge/mcp-server-motherduck)](https://smithery.ai/server/mcp-server-motherduck)
 
 An [MCP server](https://modelcontextprotocol.io/introduction) for MotherDuck and local DuckDB. 
 
@@ -47,6 +48,15 @@ On Windows: `%APPDATA%/Claude/claude_desktop_config.json`
 }
 ```
 
+### Installing via Smithery
+
+To install MotherDuck for Claude Desktop automatically via [Smithery](https://smithery.ai/server/mcp-server-motherduck):
+
+```bash
+npx -y @smithery/cli install mcp-server-motherduck --client claude
+```
+
+### Installing Manually
 ## License
 
 This MCP server is licensed under the MIT License. This means you are free to use, modify, and distribute the software, subject to the terms and conditions of the MIT License. For more details, please see the LICENSE file in the project repository.
