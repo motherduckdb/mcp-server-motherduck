@@ -2,6 +2,8 @@
 
 An [MCP server](https://modelcontextprotocol.io/introduction) for MotherDuck and local DuckDB. 
 
+<a href="https://glama.ai/mcp/servers/15mdwrzibz"><img width="380" height="200" src="https://glama.ai/mcp/servers/15mdwrzibz/badge" alt="mcp-server-motherduck MCP server" /></a>
+
 ## Components
 
 ### Resources
