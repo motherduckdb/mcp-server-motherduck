@@ -1,4 +1,5 @@
 # mcp-server-motherduck MCP server
+[![smithery badge](https://smithery.ai/badge/mcp-server-motherduck)](https://smithery.ai/server/mcp-server-motherduck)
 
 An [MCP server](https://modelcontextprotocol.io/introduction) for MotherDuck and local DuckDB. 
 
@@ -30,6 +31,14 @@ When using MotherDuck, you also need to set a [MotherDuck token](https://motherd
 On MacOS: `~/Library/Application\ Support/Claude/claude_desktop_config.json`
 
 On Windows: `%APPDATA%/Claude/claude_desktop_config.json`
+
+### Installing via Smithery
+
+To install MotherDuck for Claude Desktop automatically via [Smithery](https://smithery.ai/server/mcp-server-motherduck):
+
+```bash
+npx -y @smithery/cli install mcp-server-motherduck --client claude
+```
 
 ### Servers Configuration
 ```
