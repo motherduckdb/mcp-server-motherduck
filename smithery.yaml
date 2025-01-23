@@ -1,0 +1,20 @@
+# Smithery configuration file: https://smithery.ai/docs/config#smitheryyaml
+
+startCommand:
+  type: stdio
+  configSchema:
+    # JSON Schema defining the configuration options for the MCP.
+    type: object
+    required:
+      - home
+    properties:
+      motherduckToken:
+        type: string
+        description: The access token for authenticating to MotherDuck.
+      home:
+        type: string
+        description: The home directory path, necessary for DuckDB.
+  commandFunction:
+    # A function that produces the CLI command to start the MCP on stdio.
+    |-
+    config => ({command:'uvx', args:['mcp-server-motherduck'], env:{motherduck_token: config.motherduckToken || '', HOME: config.home}})
