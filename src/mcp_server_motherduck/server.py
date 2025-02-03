@@ -1,5 +1,3 @@
-import asyncio
-
 from mcp.server.models import InitializationOptions
 import mcp.types as types
 from mcp.server import NotificationOptions, Server
