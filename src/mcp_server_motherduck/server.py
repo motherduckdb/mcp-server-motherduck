@@ -1,5 +1,3 @@
-import asyncio
-
 from mcp.server.models import InitializationOptions
 import mcp.types as types
 from mcp.server import NotificationOptions, Server
@@ -252,7 +250,7 @@ async def handle_get_prompt(
         raise ValueError(f"Unknown prompt: {name}")
 
     return types.GetPromptResult(
-        description=f"Initial prompt for interacting with DuckDB/MotherDuck",
+        description="Initial prompt for interacting with DuckDB/MotherDuck",
         messages=[
             types.PromptMessage(
                 role="user",
@@ -314,7 +312,7 @@ async def handle_call_tool(
     global conn
     if name == "initialize-connection":
         type = arguments["type"].strip().upper()
-        if not type in ['DUCKDB', 'MOTHERDUCK']:
+        if type not in ['DUCKDB', 'MOTHERDUCK']:
             raise ValueError("Only 'DuckDB' or 'MotherDuck' are supported")
         if type == 'MOTHERDUCK' and not os.getenv('motherduck_token'):
             raise ValueError("Please set the `motherduck_token` environment variable.")
