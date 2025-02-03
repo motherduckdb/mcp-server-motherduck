@@ -250,7 +250,7 @@ async def handle_get_prompt(
         raise ValueError(f"Unknown prompt: {name}")
 
     return types.GetPromptResult(
-        description=f"Initial prompt for interacting with DuckDB/MotherDuck",
+        description="Initial prompt for interacting with DuckDB/MotherDuck",
         messages=[
             types.PromptMessage(
                 role="user",
