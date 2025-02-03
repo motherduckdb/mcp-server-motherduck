@@ -312,7 +312,7 @@ async def handle_call_tool(
     global conn
     if name == "initialize-connection":
         type = arguments["type"].strip().upper()
-        if not type in ['DUCKDB', 'MOTHERDUCK']:
+        if type not in ['DUCKDB', 'MOTHERDUCK']:
             raise ValueError("Only 'DuckDB' or 'MotherDuck' are supported")
         if type == 'MOTHERDUCK' and not os.getenv('motherduck_token'):
             raise ValueError("Please set the `motherduck_token` environment variable.")
