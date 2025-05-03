@@ -1,3 +1,5 @@
+[![MseeP.ai Security Assessment Badge](https://mseep.net/pr/motherduckdb-mcp-server-motherduck-badge.png)](https://mseep.ai/app/motherduckdb-mcp-server-motherduck)
+
 # MotherDuck's DuckDB MCP Server
 
 An MCP server implementation that interacts with DuckDB and MotherDuck databases, providing SQL analytics capabilities to AI Assistants and IDEs.
