@@ -39,6 +39,12 @@ def main():
         choices=["markdown", "duckbox", "text"],
     )
 
+    parser.add_argument(
+        "--read-only",
+        action="store_true",
+        help="Flag for connecting to DuckDB in read-only mode. Only supported for local DuckDB databases.",
+    )
+
     args = parser.parse_args()
     logger.info("🦆 MotherDuck MCP Server v" + server.SERVER_VERSION)
     logger.info("Ready to execute SQL queries via DuckDB/MotherDuck")
@@ -51,6 +57,7 @@ def main():
             result_format=args.result_format,
             home_dir=args.home_dir,
             saas_mode=args.saas_mode,
+            read_only=args.read_only,
         )
     )
 
