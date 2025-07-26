@@ -16,6 +16,8 @@ An MCP server implementation that interacts with DuckDB and MotherDuck databases
 - **SQL analytics**: use DuckDB's SQL dialect to query any size of data directly from your AI Assistant or IDE
 - **Serverless architecture**: run analytics without needing to configure instances or clusters
 
+<a href="https://glama.ai/mcp/servers/15mdwrzibz"><img width="380" height="200" src="https://glama.ai/mcp/servers/15mdwrzibz/badge" alt="mcp-server-motherduck MCP server" /></a>
+
 ## Components
 
 ### Prompts
