@@ -97,7 +97,7 @@ See [Connect to local DuckDB](#connect-to-local-duckdb).
 
 ```json
 {
-  "mcpServers": {
+  "servers": {
     "mcp-server-motherduck": {
       "command": "uvx",
       "args": [
@@ -187,7 +187,7 @@ Optionally, you can add it to a file called `.vscode/mcp.json` in your workspace
 
 ```json
 {
-  "mcpServers": {
+  "servers": {
     "mcp-server-motherduck": {
       "command": "uvx",
       "args": [
@@ -257,7 +257,7 @@ Refer to the [Read Scaling documentation](https://motherduck.com/docs/key-tasks/
 
 ```json
 {
-  "mcpServers": {
+  "servers": {
     "mcp-server-motherduck": {
       "command": "uvx",
       "args": [
@@ -281,7 +281,7 @@ In-memory database:
 
 ```json
 {
-  "mcpServers": {
+  "servers": {
     "mcp-server-motherduck": {
       "command": "uvx",
       "args": [
@@ -298,7 +298,7 @@ Local DuckDB file:
 
 ```json
 {
-  "mcpServers": {
+  "servers": {
     "mcp-server-motherduck": {
       "command": "uvx",
       "args": [
@@ -315,7 +315,7 @@ Local DuckDB file in [readonly mode](https://duckdb.org/docs/stable/connect/conc
 
 ```json
 {
-  "mcpServers": {
+  "servers": {
     "mcp-server-motherduck": {
       "command": "uvx",
       "args": [
@@ -376,7 +376,7 @@ To run the server from a local development environment, use the following config
 
 ```json
  {
-  "mcpServers": {
+  "servers": {
     "mcp-server-motherduck": {
       "command": "uv",
       "args": [
