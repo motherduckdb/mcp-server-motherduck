@@ -1,4 +1,5 @@
 import os
+import glob
 import duckdb
 from typing import Literal, Optional
 import io
@@ -67,6 +68,31 @@ class DatabaseClient:
         self, db_path: str, motherduck_token: str | None = None, saas_mode: bool = False
     ) -> tuple[str, Literal["duckdb", "motherduck"]]:
         """Resolve and validate the database path"""
+        # Handle wildcard path - find DuckDB database in current directory
+        if db_path == "*":
+            logger.info("Wildcard '*' specified, searching for DuckDB database in current directory")
+            cwd = os.getcwd()
+            
+            # Common DuckDB file extensions
+            patterns = ["*.duckdb", "*.db", "*.duck"]
+            found_dbs = []
+            
+            for pattern in patterns:
+                found_dbs.extend(glob.glob(os.path.join(cwd, pattern)))
+            
+            if not found_dbs:
+                raise ValueError(
+                    f"No DuckDB database files found in current directory: {cwd}\n"
+                    f"Searched for files with extensions: {', '.join(patterns)}"
+                )
+            
+            if len(found_dbs) > 1:
+                logger.warning(f"Multiple database files found: {found_dbs}")
+                logger.info(f"Using the first database: {found_dbs[0]}")
+            
+            db_path = found_dbs[0]
+            logger.info(f"Auto-detected DuckDB database: {db_path}")
+        
         # Handle MotherDuck paths
         if db_path.startswith("md:"):
             if motherduck_token:

@@ -23,7 +23,7 @@ logging.basicConfig(
 @click.option(
     "--db-path",
     default="md:",
-    help="(Default: `md:`) Path to local DuckDB database file or MotherDuck database",
+    help="(Default: `md:`) Path to local DuckDB database file or MotherDuck database. Use '*' to auto-detect a database in the current directory.",
 )
 @click.option(
     "--motherduck-token",
