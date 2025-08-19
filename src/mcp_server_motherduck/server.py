@@ -98,6 +98,29 @@ def build_application(
         logger.info("Listing tools")
         return [
             types.Tool(
+                name="list_databases",
+                description="Returns a list of all databases of this user",
+                inputSchema={
+                    "type": "object",
+                    "properties": {},
+                    "required": [],
+                },
+            ),
+            types.Tool(
+                name="pick_database",
+                description="Select a database to run queries against. This will also show you the table definitions in the database.",
+                inputSchema={
+                    "type": "object",
+                    "properties": {
+                        "database_name": {
+                            "type": "string",
+                            "description": "Name of the database to use",
+                        },
+                    },
+                    "required": ["database_name"],
+                },
+            ),
+            types.Tool(
                 name="query",
                 description="Use this to execute a query on the MotherDuck or DuckDB database",
                 inputSchema={
@@ -109,6 +132,23 @@ def build_application(
                         },
                     },
                     "required": ["query"],
+                },
+            ),
+            types.Tool(
+                name="ask",
+                description=(
+                    "Use this to ask a naural language question to the database.\n"
+                    "This works better for complex question because it uses MotherDuck's internal AI to generate the right SQL query."
+                ),
+                inputSchema={
+                    "type": "object",
+                    "properties": {
+                        "question": {
+                            "type": "string",
+                            "description": "The question you want to ask against the database",
+                        },
+                    },
+                    "required": ["question"],
                 },
             ),
         ]
@@ -130,7 +170,21 @@ def build_application(
                     ]
                 tool_response = db_client.query(arguments["query"])
                 return [types.TextContent(type="text", text=str(tool_response))]
-
+            if name == "list_databases":
+                tool_response = db_client.query("SHOW ALL DATABASES;")
+                return [types.TextContent(type="text", text=str(tool_response))]
+            if name == "pick_database":
+                if arguments is None:
+                    return [
+                        types.TextContent(type="text", text="Error: No database_name provided")
+                    ]
+                db_client.query("USE "+arguments["database_name"]+";")
+                tool_response = db_client.query("SELECT sql FROM duckdb_tables() WHERE database_name = '"+arguments["database_name"]+"'")
+                return [types.TextContent(type="text", text=str(tool_response))]
+            if name == "ask":
+                tool_response = db_client.query("CALL prompt_sql(?)", [arguments["question"]])
+                return [types.TextContent(type="text", text=str(tool_response))]
+            
             return [types.TextContent(type="text", text=f"Unsupported tool: {name}")]
 
         except Exception as e:

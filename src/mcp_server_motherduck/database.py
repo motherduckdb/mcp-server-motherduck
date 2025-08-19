@@ -6,6 +6,7 @@ from contextlib import redirect_stdout
 from tabulate import tabulate
 import logging
 from .configs import SERVER_VERSION
+import json
 
 logger = logging.getLogger("mcp_server_motherduck")
 
@@ -100,7 +101,7 @@ class DatabaseClient:
 
         return db_path, "duckdb"
 
-    def _execute(self, query: str) -> str:
+    def _execute(self, query: str, prepared_args: list[str] = []) -> str:
         if self.conn is None:
             # open short lived readonly connection, run query, close connection, return result
             conn = duckdb.connect(
@@ -108,24 +109,30 @@ class DatabaseClient:
                 config={"custom_user_agent": f"mcp-server-motherduck/{SERVER_VERSION}"},
                 read_only=self._read_only,
             )
-            q = conn.execute(query)
+            if len(prepared_args) > 0:
+                q = conn.execute(query, prepared_args)
+            else:
+                q = conn.execute(query)
         else:
-            q = self.conn.execute(query)
+            if len(prepared_args) > 0:
+                q = self.conn.execute(query, prepared_args)
+            else:
+                q = self.conn.execute(query)
 
-        out = tabulate(
-            q.fetchall(),
-            headers=[d[0] + "\n" + d[1] for d in q.description],
-            tablefmt="pretty",
-        )
+        # Format the query result as JSON
+        columns = [d[0] for d in q.description]
+        rows = q.fetchall()
+        out = json.dumps([dict(zip(columns, row)) for row in rows], indent=2)
 
         if self.conn is None:
             conn.close()
 
         return out
 
-    def query(self, query: str) -> str:
+    def query(self, query: str, prepared_args: list[str] = []) -> str:
         try:
-            return self._execute(query)
+            return self._execute(query, prepared_args)
 
         except Exception as e:
             raise ValueError(f"❌ Error executing query: {e}")
+
