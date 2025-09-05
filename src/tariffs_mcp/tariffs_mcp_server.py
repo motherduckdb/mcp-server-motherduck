@@ -7,6 +7,8 @@ import logging
 import json
 import re
 import time
+import os
+from datetime import datetime
 from typing import Dict, List, Optional, Any
 from pydantic import AnyUrl
 import mcp.types as types
@@ -15,6 +17,43 @@ from mcp.server.models import InitializationOptions
 import duckdb
 
 logger = logging.getLogger("enhanced_mcp_server")
+
+# Set up MCP request logging
+def setup_mcp_request_logging(log_dir: str = "logs"):
+    """Set up comprehensive MCP request logging"""
+    os.makedirs(log_dir, exist_ok=True)
+    
+    # Create MCP request logger
+    mcp_logger = logging.getLogger("mcp_requests")
+    mcp_logger.setLevel(logging.INFO)
+    
+    # Remove existing handlers to avoid duplicates
+    for handler in mcp_logger.handlers[:]:
+        mcp_logger.removeHandler(handler)
+    
+    # File handler for MCP requests
+    log_file = os.path.join(log_dir, "mcp_requests.log")
+    file_handler = logging.FileHandler(log_file, mode='a')
+    file_handler.setLevel(logging.INFO)
+    
+    # Console handler for debugging
+    console_handler = logging.StreamHandler()
+    console_handler.setLevel(logging.INFO)
+    
+    # Detailed formatter
+    formatter = logging.Formatter(
+        '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    )
+    file_handler.setFormatter(formatter)
+    console_handler.setFormatter(formatter)
+    
+    mcp_logger.addHandler(file_handler)
+    mcp_logger.addHandler(console_handler)
+    
+    return mcp_logger
+
+# Initialize MCP request logger
+mcp_request_logger = setup_mcp_request_logging()
 
 class QueryValidator:
     """Validates and sanitizes SQL queries for safety"""
@@ -180,7 +219,9 @@ def build_enhanced_server(db_path: str, read_only: bool = True):
     async def handle_list_tools() -> list[types.Tool]:
         """List available tools with proper schemas"""
         logger.info("Listing enhanced tools")
-        return [
+        mcp_request_logger.info("MCP REQUEST: list_tools() called")
+        
+        tools = [
             types.Tool(
                 name="execute_query",
                 description="Execute a safe SELECT query on the USITC tariff database. Query is automatically validated and limited for safety.",
@@ -243,6 +284,9 @@ def build_enhanced_server(db_path: str, read_only: bool = True):
                 },
             ),
         ]
+        
+        mcp_request_logger.info(f"MCP RESPONSE: list_tools() returning {len(tools)} tools: {[tool.name for tool in tools]}")
+        return tools
     
     @server.call_tool()
     async def handle_tool_call(
@@ -251,18 +295,27 @@ def build_enhanced_server(db_path: str, read_only: bool = True):
         """Handle tool execution with enhanced error handling"""
         logger.info(f"🔧 Calling tool: {name} with args: {arguments}")
         
+        # Log the incoming MCP request
+        mcp_request_logger.info(f"MCP REQUEST: call_tool(name='{name}', arguments={json.dumps(arguments, indent=2) if arguments else 'None'})")
+        
         try:
             if name == "execute_query":
+                mcp_request_logger.info(f"MCP TOOL: execute_query - Processing query request")
+                
                 if not arguments or "query" not in arguments:
-                    return [types.TextContent(
+                    error_response = [types.TextContent(
                         type="text", 
                         text=json.dumps({
                             "success": False,
                             "error": "Query parameter is required"
                         }, indent=2)
                     )]
+                    mcp_request_logger.info(f"MCP RESPONSE: execute_query - Error: Missing query parameter")
+                    return error_response
                 
                 result = db_client.execute_query(arguments["query"])
+                
+                mcp_request_logger.info(f"MCP TOOL: execute_query - Query executed: '{arguments['query'][:100]}{'...' if len(arguments['query']) > 100 else ''}' - Success: {result['success']}")
                 
                 # Format response
                 if result["success"]:
@@ -280,12 +333,17 @@ def build_enhanced_server(db_path: str, read_only: bool = True):
                                 output += f"• Query was automatically limited for safety\n"
                     else:
                         output = "Query executed successfully but returned no data."
+                    
+                    mcp_request_logger.info(f"MCP RESPONSE: execute_query - Success: {result['row_count']} rows returned in {result['execution_time']}s")
                 else:
                     output = f"❌ Query failed: {result['error']}"
+                    mcp_request_logger.info(f"MCP RESPONSE: execute_query - Error: {result['error']}")
                 
                 return [types.TextContent(type="text", text=output)]
             
             elif name == "list_tables":
+                mcp_request_logger.info(f"MCP TOOL: list_tables - Processing request")
+                
                 result = db_client.get_schema_info()
                 if result["success"]:
                     tables = [row[0] for row in result["data"]]
@@ -297,13 +355,18 @@ def build_enhanced_server(db_path: str, read_only: bool = True):
                         else:
                             output += f"• {table}\n"
                     output += f"\n📊 Total: {len(tables)} tables"
+                    
+                    mcp_request_logger.info(f"MCP RESPONSE: list_tables - Success: {len(tables)} tables found")
                 else:
                     output = f"❌ Failed to list tables: {result['error']}"
+                    mcp_request_logger.info(f"MCP RESPONSE: list_tables - Error: {result['error']}")
                 
                 return [types.TextContent(type="text", text=output)]
             
             elif name == "get_schema":
                 table_name = arguments.get("table_name") if arguments else None
+                mcp_request_logger.info(f"MCP TOOL: get_schema - Processing request for table: {table_name or 'all tables'}")
+                
                 result = db_client.get_schema_info(table_name)
                 
                 if result["success"]:
@@ -311,44 +374,58 @@ def build_enhanced_server(db_path: str, read_only: bool = True):
                         output = f"📋 Schema for table '{table_name}':\n\n"
                         for row in result["data"]:
                             output += f"• {row[0]} ({row[1]})\n"
+                        mcp_request_logger.info(f"MCP RESPONSE: get_schema - Success: Schema for '{table_name}' with {len(result['data'])} columns")
                     else:
                         output = format_query_result(result)
+                        mcp_request_logger.info(f"MCP RESPONSE: get_schema - Success: All tables schema returned")
                 else:
                     output = f"❌ Schema query failed: {result['error']}"
+                    mcp_request_logger.info(f"MCP RESPONSE: get_schema - Error: {result['error']}")
                 
                 return [types.TextContent(type="text", text=output)]
             
             elif name == "get_sample_data":
                 if not arguments or "table_name" not in arguments:
-                    return [types.TextContent(
+                    error_response = [types.TextContent(
                         type="text",
                         text="❌ table_name parameter is required"
                     )]
+                    mcp_request_logger.info(f"MCP RESPONSE: get_sample_data - Error: Missing table_name parameter")
+                    return error_response
                 
                 table_name = arguments["table_name"]
                 limit = arguments.get("limit", 5)
+                mcp_request_logger.info(f"MCP TOOL: get_sample_data - Processing request for table: {table_name}, limit: {limit}")
+                
                 result = db_client.get_sample_data(table_name, limit)
                 
                 if result["success"]:
                     output = f"📋 Sample data from '{table_name}' ({result['row_count']} rows):\n\n"
                     output += format_query_result(result)
+                    mcp_request_logger.info(f"MCP RESPONSE: get_sample_data - Success: {result['row_count']} rows returned from '{table_name}'")
                 else:
                     output = f"❌ Failed to get sample data: {result['error']}"
+                    mcp_request_logger.info(f"MCP RESPONSE: get_sample_data - Error: {result['error']}")
                 
                 return [types.TextContent(type="text", text=output)]
             
             else:
-                return [types.TextContent(
+                mcp_request_logger.info(f"MCP TOOL: unknown_tool - Unknown tool requested: {name}")
+                error_response = [types.TextContent(
                     type="text", 
                     text=f"❌ Unknown tool: {name}"
                 )]
+                mcp_request_logger.info(f"MCP RESPONSE: unknown_tool - Error: Unknown tool '{name}'")
+                return error_response
         
         except Exception as e:
             logger.error(f"Tool execution error: {e}")
-            return [types.TextContent(
+            mcp_request_logger.error(f"MCP ERROR: Tool '{name}' execution failed with exception: {str(e)}")
+            error_response = [types.TextContent(
                 type="text",
                 text=f"❌ Tool execution failed: {str(e)}"
             )]
+            return error_response
     
     # Set up initialization options
     initialization_options = InitializationOptions(
@@ -424,7 +501,16 @@ if __name__ == "__main__":
     args = parser.parse_args()
     
     # Set up logging
-    logging.basicConfig(level=logging.INFO)
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    )
+    
+    # Log server startup
+    mcp_request_logger.info(f"MCP SERVER: Starting Enhanced USITC Tariff MCP Server")
+    mcp_request_logger.info(f"MCP SERVER: Database path: {args.db_path}")
+    mcp_request_logger.info(f"MCP SERVER: Transport mode: {args.transport}")
+    mcp_request_logger.info(f"MCP SERVER: Read-only mode: {args.read_only}")
     
     # Build server
     server, init_options, db_client = build_enhanced_server(args.db_path, args.read_only)
@@ -432,16 +518,23 @@ if __name__ == "__main__":
     try:
         if args.transport == "stdio":
             import asyncio
+            mcp_request_logger.info("MCP SERVER: Starting STDIO transport")
             asyncio.run(stdio_server(server, init_options))
         else:
             # Stream mode (HTTP)
             from mcp.server.session import ServerSession
             from mcp.server.sse import SseServerTransport
             
+            mcp_request_logger.info(f"MCP SERVER: Starting HTTP transport on port {args.port}")
             # This would need additional implementation for HTTP transport
             print(f"🚀 Enhanced MCP Server starting on port {args.port}")
             
     except KeyboardInterrupt:
         logger.info("Server stopped")
+        mcp_request_logger.info("MCP SERVER: Server stopped by user (KeyboardInterrupt)")
+    except Exception as e:
+        mcp_request_logger.error(f"MCP SERVER: Server failed with exception: {str(e)}")
+        raise
     finally:
         db_client.close()
+        mcp_request_logger.info("MCP SERVER: Database connection closed, server shutdown complete")
