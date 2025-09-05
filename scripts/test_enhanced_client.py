@@ -1,15 +1,140 @@
 #!/usr/bin/env python3
 """
 Test client for Enhanced MCP Server with comprehensive tool testing
+Automatically manages server lifecycle for seamless testing
 """
 
 import requests
 import json
 import sys
 import time
+import subprocess
+import socket
+import signal
+import atexit
 from datetime import datetime
+from pathlib import Path
 
+# Configuration
 MCP_SERVER_URL = "http://127.0.0.1:8000/mcp/"
+PROJECT_ROOT = Path(__file__).parent.parent
+DB_PATH = PROJECT_ROOT / "data" / "usitc_data" / "usitc_trade_data.db"
+
+# Global variable to track server process
+server_process = None
+
+def cleanup_server():
+    """Clean up server process on exit"""
+    global server_process
+    if server_process and server_process.poll() is None:
+        print("\n🛑 Shutting down MCP server...")
+        server_process.terminate()
+        try:
+            server_process.wait(timeout=5)
+        except subprocess.TimeoutExpired:
+            print("⚠️  Force killing server...")
+            server_process.kill()
+            server_process.wait()
+        print("✅ Server stopped")
+
+def check_port_available(port=8000):
+    """Check if the specified port is available"""
+    try:
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            s.bind(('127.0.0.1', port))
+            return True
+    except socket.error:
+        return False
+
+def kill_existing_servers():
+    """Kill any existing MCP servers running on port 8000"""
+    try:
+        result = subprocess.run(['lsof', '-i', ':8000'], 
+                              capture_output=True, text=True)
+        if result.returncode == 0 and result.stdout:
+            lines = result.stdout.strip().split('\n')[1:]  # Skip header
+            pids = []
+            for line in lines:
+                parts = line.split()
+                if len(parts) > 1:
+                    pid = parts[1]
+                    pids.append(pid)
+            
+            if pids:
+                print(f"🔍 Found existing processes on port 8000: {', '.join(pids)}")
+                for pid in pids:
+                    try:
+                        subprocess.run(['kill', pid], check=True)
+                        print(f"🛑 Killed process {pid}")
+                    except subprocess.CalledProcessError:
+                        print(f"⚠️  Could not kill process {pid} (may already be dead)")
+                time.sleep(2)
+    except Exception as e:
+        print(f"⚠️  Error checking for existing servers: {e}")
+
+def start_mcp_server():
+    """Start the Enhanced MCP server using our HTTP wrapper"""
+    global server_process
+    
+    print("🚀 Starting Enhanced MCP server...")
+    
+    # Clean up any existing servers
+    if not check_port_available():
+        print("🔍 Port 8000 is in use. Cleaning up...")
+        kill_existing_servers()
+        
+        if not check_port_available():
+            print("❌ Port 8000 is still in use. Manual cleanup required.")
+            sys.exit(1)
+    
+    # Use our HTTP wrapper for the enhanced server
+    cmd = ["uv", "run", "python", "scripts/run_enhanced_server.py", "--port", "8000"]
+    
+    try:
+        server_process = subprocess.Popen(
+            cmd, 
+            cwd=PROJECT_ROOT,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            preexec_fn=None if sys.platform == "win32" else lambda: None
+        )
+        
+        print(f"✅ Enhanced MCP server started with PID: {server_process.pid}")
+        print("⏱️  Waiting for server to initialize...")
+        
+        # Wait for server to be ready
+        max_attempts = 30
+        for attempt in range(max_attempts):
+            if server_process.poll() is not None:
+                # Process died
+                stdout, stderr = server_process.communicate()
+                print(f"❌ Server process died:")
+                if stdout:
+                    print(f"STDOUT: {stdout.decode()}")
+                if stderr:
+                    print(f"STDERR: {stderr.decode()}")
+                sys.exit(1)
+            
+            # Try to connect to the health endpoint
+            try:
+                response = requests.get("http://127.0.0.1:8000/health", timeout=2)
+                if response.status_code == 200:
+                    print("✅ Server is ready!")
+                    return server_process
+            except requests.exceptions.RequestException:
+                pass
+            
+            time.sleep(1)
+            if attempt % 5 == 0:
+                print(f"⏳ Still waiting... ({attempt + 1}/{max_attempts})")
+        
+        print("❌ Server failed to start properly within timeout")
+        cleanup_server()
+        sys.exit(1)
+        
+    except Exception as e:
+        print(f"❌ Failed to start Enhanced MCP server: {e}")
+        sys.exit(1)
 
 def parse_sse_response(response_text):
     """Parse Server-Sent Events format response"""
@@ -234,30 +359,45 @@ def main():
     print("=" * 50)
     print(f"📅 Test started at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     
-    # Test initialization
-    if not test_initialization():
+    # Register cleanup function
+    atexit.register(cleanup_server)
+    
+    # Start the MCP server
+    start_mcp_server()
+    
+    try:
+        # Test initialization
+        if not test_initialization():
+            sys.exit(1)
+        
+        # Test tool discovery
+        tools = test_list_tools()
+        if not tools:
+            sys.exit(1)
+        
+        # Test enhanced tools
+        test_enhanced_tools()
+        
+        # Test query safety
+        test_query_safety()
+        
+        # Test safe queries
+        test_safe_queries()
+        
+        print("\n" + "=" * 50)
+        print("✅ Enhanced MCP Server Test Suite Complete!")
+        print("🛡️  Security: Query validation working correctly")
+        print("🔧 Tools: All enhanced tools functional")
+        print("📊 Data: USITC tariff database accessible and safe")
+        print("\n💡 Your enhanced MCP server is production-ready!")
+        
+    except KeyboardInterrupt:
+        print("\n🛑 Test interrupted by user")
+    except Exception as e:
+        print(f"\n❌ Test failed with error: {e}")
         sys.exit(1)
-    
-    # Test tool discovery
-    tools = test_list_tools()
-    if not tools:
-        sys.exit(1)
-    
-    # Test enhanced tools
-    test_enhanced_tools()
-    
-    # Test query safety
-    test_query_safety()
-    
-    # Test safe queries
-    test_safe_queries()
-    
-    print("\n" + "=" * 50)
-    print("✅ Enhanced MCP Server Test Suite Complete!")
-    print("🛡️  Security: Query validation working correctly")
-    print("🔧 Tools: All enhanced tools functional")
-    print("📊 Data: USITC tariff database accessible and safe")
-    print("\n💡 Your enhanced MCP server is production-ready!")
+    finally:
+        cleanup_server()
 
 if __name__ == "__main__":
     main()

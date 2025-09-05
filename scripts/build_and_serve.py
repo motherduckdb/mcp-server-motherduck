@@ -6,6 +6,7 @@ End-to-end script that builds the USITC tariff database and starts the MCP serve
 import subprocess
 import sys
 import time
+import socket
 from pathlib import Path
 
 # Get the project root directory
@@ -23,8 +24,55 @@ def run_command(cmd, description):
         print(f"❌ {description} failed: {e}")
         sys.exit(1)
 
+def check_port_available(port=8000):
+    """Check if the specified port is available"""
+    try:
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            s.bind(('127.0.0.1', port))
+            return True
+    except socket.error:
+        return False
+
+def kill_existing_servers():
+    """Kill any existing MCP servers running on port 8000"""
+    try:
+        # Find processes using port 8000
+        result = subprocess.run(['lsof', '-i', ':8000'], 
+                              capture_output=True, text=True)
+        if result.returncode == 0 and result.stdout:
+            lines = result.stdout.strip().split('\n')[1:]  # Skip header
+            pids = []
+            for line in lines:
+                parts = line.split()
+                if len(parts) > 1:
+                    pid = parts[1]
+                    pids.append(pid)
+            
+            if pids:
+                print(f"🔍 Found existing processes on port 8000: {', '.join(pids)}")
+                for pid in pids:
+                    try:
+                        subprocess.run(['kill', pid], check=True)
+                        print(f"🛑 Killed process {pid}")
+                    except subprocess.CalledProcessError:
+                        print(f"⚠️  Could not kill process {pid} (may already be dead)")
+                time.sleep(2)  # Give processes time to die
+    except Exception as e:
+        print(f"⚠️  Error checking for existing servers: {e}")
+
 def start_mcp_server():
     """Start the MCP server in the background"""
+    # Check if port is available
+    if not check_port_available():
+        print("🔍 Port 8000 is already in use. Attempting to clean up...")
+        kill_existing_servers()
+        
+        # Check again after cleanup
+        if not check_port_available():
+            print("❌ Port 8000 is still in use. Please manually stop the conflicting process:")
+            subprocess.run(['lsof', '-i', ':8000'])
+            sys.exit(1)
+    
     print(f"\n🚀 Starting MCP server with database: {DB_PATH}")
     
     cmd = [
@@ -41,7 +89,12 @@ def start_mcp_server():
         print("🌐 Server should be available at: http://127.0.0.1:8000/mcp")
         print("📊 Database contains 10 years of USITC tariff data (2015-2024)")
         print("\n⏱️  Waiting a few seconds for server to initialize...")
-        time.sleep(3)
+        time.sleep(5)  # Give it a bit more time
+        
+        # Check if the process is still running
+        if process.poll() is not None:
+            print("❌ Server process exited unexpectedly")
+            sys.exit(1)
         
         return process
     except Exception as e:
