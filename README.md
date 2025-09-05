@@ -42,7 +42,7 @@ mcp-tarrifs/
 
 ### Option 1: Complete Setup (Recommended)
 
-Run the all-in-one script that downloads data and starts the MCP server:
+Build the database and get MCP client configuration:
 
 ```bash
 # Clone the repository
@@ -52,23 +52,54 @@ cd mcp-tarrifs
 # Install dependencies
 uv sync
 
-# Build database and start MCP server
-python scripts/build_and_serve.py
+# Build database and get configuration info
+python scripts/build_and_serve.py --build-only
+
+# Or show just the configuration
+python scripts/build_and_serve.py --config-only
+
+# Or from outside the project directory
+uv run --project /Users/jmabry/repos/mcp-tarrifs python /Users/jmabry/repos/mcp-tarrifs/scripts/build_and_serve.py --build-only
 ```
 
-This script will:
+This will:
 - Download 10 years of USITC tariff data (2015-2024)
 - Extract and load data into DuckDB
-- Start the MCP server on `http://127.0.0.1:8000/mcp`
-- Provide a read-only interface to the tariff database
+- Provide configuration for MCP clients (Perplexity, Claude, etc.)
 
-### Option 2: Test Existing Setup
+### Option 2: Interactive Mode (Testing)
+
+To test the MCP server interactively:
+
+```bash
+# Build database and start interactive server
+python scripts/build_and_serve.py
+
+# Or from outside the project directory
+uv run --project /Users/jmabry/repos/mcp-tarrifs python /Users/jmabry/repos/mcp-tarrifs/scripts/build_and_serve.py
+```
+
+This mode starts the server using stdio transport for direct MCP client communication.
+
+### Option 3: Web Server Mode (Legacy)
+
+If you need an HTTP server for testing or web-based clients:
+
+```bash
+# Start HTTP server on port 8000
+python scripts/run_enhanced_server.py
+```
+
+### Option 4: Test Existing Setup
 
 If you already have the database built, test the MCP server functionality:
 
 ```bash
-# Test the enhanced MCP server
+# Test the enhanced MCP server (from within project directory)
 python scripts/test_enhanced_client.py
+
+# Or from outside the project directory
+uv run --project /Users/jmabry/repos/mcp-tarrifs python /Users/jmabry/repos/mcp-tarrifs/scripts/test_enhanced_client.py
 ```
 
 ## 📊 Database Contents
@@ -105,7 +136,11 @@ Each year's data includes columns like:
 
 **Usage**:
 ```bash
+# From within project directory
 python scripts/build_and_serve.py
+
+# From outside project directory
+uv run --project /Users/jmabry/repos/mcp-tarrifs python /Users/jmabry/repos/mcp-tarrifs/scripts/build_and_serve.py
 ```
 
 **Output**:
@@ -125,7 +160,11 @@ python scripts/build_and_serve.py
 
 **Usage**:
 ```bash
+# From within project directory
 python scripts/test_enhanced_client.py
+
+# From outside project directory
+uv run --project /Users/jmabry/repos/mcp-tarrifs python /Users/jmabry/repos/mcp-tarrifs/scripts/test_enhanced_client.py
 ```
 
 **Tests Include**:
@@ -133,6 +172,35 @@ python scripts/test_enhanced_client.py
 - Tool discovery (`list_tables`, `get_schema`, `get_sample_data`)
 - Query safety and validation
 - Data exploration capabilities
+
+### `scripts/mcp_server_launcher.py`
+
+**Purpose**: MCP-client friendly server launcher with database logging
+
+**Features**:
+- Automatic database building if needed
+- DuckDB query logging setup
+- Minimal output to stdout (MCP STDIO compatible)
+- Read-only server mode by default
+- Creates and manages logs directory
+
+**Usage**:
+```bash
+# Build database and start server (MCP compatible)
+python scripts/mcp_server_launcher.py
+
+# Only build database, don't start server
+python scripts/mcp_server_launcher.py --build-only
+
+# Disable automatic logging setup
+python scripts/mcp_server_launcher.py --no-logging
+```
+
+**Logging Features**:
+- Automatically creates `logs/` directory
+- Configures DuckDB to log queries to `logs/queries.log`
+- Updates `~/.duckdbrc` with logging settings
+- Logs directory is ignored by Git
 
 ## 🔧 MCP Server Tools
 
@@ -154,7 +222,26 @@ Once the server is running, you can ask AI assistants questions like:
 - "What are the most common tariff rates for agricultural products?"
 - "Find all products with special duty rates"
 
-## 💻 Integration with AI Clients
+## 💻 Integration with MCP Clients
+
+The recommended approach is to use stdio transport for direct integration with MCP clients.
+
+### Perplexity
+
+Add this configuration to your MCP settings:
+
+```json
+{
+  "name": "usitc-tariffs",
+  "command": "python",
+  "args": [
+    "-m", "mcp_server_motherduck.server",
+    "--db-path", "/path/to/mcp-tarrifs/data/usitc_data/usitc_trade_data.db",
+    "--read-only"
+  ],
+  "cwd": "/path/to/mcp-tarrifs/src"
+}
+```
 
 ### Claude Desktop
 
@@ -167,7 +254,6 @@ Add to your `claude_desktop_config.json`:
       "command": "python",
       "args": [
         "-m", "mcp_server_motherduck.server",
-        "--transport", "stream",
         "--db-path", "/path/to/mcp-tarrifs/data/usitc_data/usitc_trade_data.db",
         "--read-only"
       ],
@@ -189,7 +275,6 @@ Add to your MCP configuration:
         "command": "python",
         "args": [
           "-m", "mcp_server_motherduck.server",
-          "--transport", "stream", 
           "--db-path", "/path/to/mcp-tarrifs/data/usitc_data/usitc_trade_data.db",
           "--read-only"
         ],

@@ -5,6 +5,7 @@ import io
 from contextlib import redirect_stdout
 from tabulate import tabulate
 import logging
+from pathlib import Path
 from .configs import SERVER_VERSION
 
 logger = logging.getLogger("mcp_server_motherduck")
@@ -28,8 +29,34 @@ class DatabaseClient:
         # Set the home directory for DuckDB
         if home_dir:
             os.environ["HOME"] = home_dir
+            
+        # Determine logging configuration
+        self.logs_dir = self._get_logs_dir()
+        self.query_log_path = self.logs_dir / "queries.log" if self.logs_dir else None
 
         self.conn = self._initialize_connection()
+        
+    def _get_logs_dir(self) -> Optional[Path]:
+        """Get the logs directory path if it exists"""
+        # Try to find the project root by looking for common project files
+        current_path = Path.cwd()
+        for parent in [current_path] + list(current_path.parents):
+            if (parent / "pyproject.toml").exists() or (parent / "README.md").exists():
+                logs_dir = parent / "logs"
+                if logs_dir.exists():
+                    return logs_dir
+                break
+        return None
+        
+    def _setup_logging_for_connection(self, conn: duckdb.DuckDBPyConnection):
+        """Set up logging for a DuckDB connection"""
+        if self.query_log_path:
+            try:
+                conn.execute("PRAGMA enable_logging")
+                conn.execute(f"SET log_query_path = '{self.query_log_path}'")
+                logger.debug(f"DuckDB logging enabled for connection, logs to: {self.query_log_path}")
+            except Exception as e:
+                logger.warning(f"Failed to enable DuckDB logging: {e}")
 
     def _initialize_connection(self) -> Optional[duckdb.DuckDBPyConnection]:
         """Initialize connection to the MotherDuck or DuckDB database"""
@@ -46,6 +73,7 @@ class DatabaseClient:
                     },
                     read_only=self._read_only,
                 )
+                self._setup_logging_for_connection(conn)
                 conn.execute("SELECT 1")
                 conn.close()
                 return None
@@ -58,6 +86,9 @@ class DatabaseClient:
             config={"custom_user_agent": f"mcp-server-motherduck/{SERVER_VERSION}"},
             read_only=self._read_only,
         )
+        
+        # Set up logging for persistent connections
+        self._setup_logging_for_connection(conn)
 
         logger.info(f"✅ Successfully connected to {self.db_type} database")
 
@@ -108,6 +139,8 @@ class DatabaseClient:
                 config={"custom_user_agent": f"mcp-server-motherduck/{SERVER_VERSION}"},
                 read_only=self._read_only,
             )
+            # Set up logging for short-lived connections too
+            self._setup_logging_for_connection(conn)
             q = conn.execute(query)
         else:
             q = self.conn.execute(query)
