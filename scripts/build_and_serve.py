@@ -55,7 +55,7 @@ def main():
     # Step 1: Build the database
     if not DB_PATH.exists():
         print("📦 Database not found. Building from scratch...")
-        run_command("uv run python src/db_tariffs/db_build.py --all --years 10", 
+        run_command("uv run python src/tariffs_mcp/db_build.py --all --years 10", 
                    "Building USITC tariff database (10 years)")
     else:
         print(f"✅ Database already exists at: {DB_PATH}")
@@ -71,7 +71,7 @@ def main():
     print("   • MCP Server: http://127.0.0.1:8000/mcp")
     print("   • Contains: 10 tables with 142K+ rows of tariff data")
     print("\n💡 Next steps:")
-    print("   • Run 'python scripts/test_mcp_client.py' to test the connection")
+    print("   • Run 'python scripts/test_enhanced_client.py' to test the connection")
     print("   • Use the server with Claude Code, Cursor, or other MCP clients")
     print("   • Press Ctrl+C to stop the server")
     
