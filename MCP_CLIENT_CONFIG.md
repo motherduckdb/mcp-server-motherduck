@@ -182,7 +182,7 @@ Note: The `PYTHONPATH=src` is needed for the module approach because the package
 1. **Build the database first** (only needed once):
    ```bash
    cd /Users/jmabry/repos/mcp-tarrifs
-   uv run python src/tariffs_mcp/db_build.py --all --years 10
+   uv run python src/tariffs_db/db_build.py --all --years 10
    ```
 
 2. **Install dependencies**:

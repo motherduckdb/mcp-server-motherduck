@@ -1,7 +1,7 @@
 [project]
-name = "mcp-server-motherduck"
-version = "0.6.3"
-description = "A MCP server for MotherDuck and local DuckDB"
+name = "mcp-server-unified"
+version = "1.0.0"
+description = "Unified MCP server for DuckDB/MotherDuck with modular dataset support"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
@@ -19,13 +19,48 @@ dependencies = [
  "xlrd>=2.0.0",
 ]
 
+[dependency-groups]
+test = [
+    "pytest>=7.0.0",
+    "pytest-asyncio>=0.21.0", 
+    "pytest-cov>=4.0.0",
+]
+
 [[project.authors]]
-name = "tdoehmen"
-email = "till@motherduck.com"
+name = "jmabry"
+email = "your-email@example.com"
 
 [build-system]
 requires = [ "hatchling",]
 build-backend = "hatchling.build"
 
+[tool.hatch.build.targets.wheel]
+packages = ["src/mcp_server"]
+
 [project.scripts]
-mcp-server-motherduck = "mcp_server_motherduck:main"
+mcp-server-unified = "mcp_server:main"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py", "*_test.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = [
+    "--verbose",
+    "--tb=short",
+    "--strict-markers",
+    "--disable-warnings",
+]
+asyncio_mode = "auto"
+
+[tool.coverage.run]
+source = ["src"]
+omit = ["tests/*", "*/test_*"]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise AssertionError",
+    "raise NotImplementedError",
+]

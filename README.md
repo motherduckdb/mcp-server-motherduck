@@ -7,29 +7,37 @@ A comprehensive MCP (Model Context Protocol) server implementation for accessing
 This project combines two powerful components:
 
 1. **USITC Tariff Data Downloader**: Automatically downloads, extracts, and loads 10 years of US tariff data into a DuckDB database
-2. **MotherDuck MCP Server**: Provides SQL analytics capabilities through MCP clients like Claude, Cursor, and VS Code
+2. **Unified MCP Server**: Provides specialized tariff analysis tools and SQL capabilities through MCP clients like Claude, Cursor, and VS Code
 
 ## ✨ Features
 
 - **Automated Data Collection**: Downloads and processes 10 years of USITC tariff data (2015-2024)
 - **DuckDB Integration**: High-performance analytics database with 142K+ rows of tariff information
-- **MCP Server**: Query tariff data through AI assistants using natural language
-- **Enhanced Tools**: Specialized tools for tariff data exploration and analysis
+- **Unified MCP Server**: Query tariff data through AI assistants using natural language
+- **Specialized Tariff Tools**: Purpose-built tools for tariff analysis, comparison, and HTS code lookup
+- **Plugin Architecture**: Modular design with tariff-specific functionality
 - **Local & Cloud Support**: Works with local DuckDB files or MotherDuck cloud databases
 
 ## 📁 Project Structure
 
 ```
 mcp-tarrifs/
-├── scripts/                    # Main user scripts
-│   ├── build_and_serve.py     # End-to-end setup and server startup
-│   └── test_enhanced_client.py # Test MCP server functionality
+├── scripts/                    # Server launcher and utilities
+│   └── mcp_server_launcher.py  # MCP-compatible server launcher
 ├── src/
-│   ├── mcp_server_motherduck/  # Core MCP server implementation
-│   └── tariffs_mcp/           # Enhanced MCP server with tariff-specific tools
+│   ├── mcp_server/             # Unified MCP server implementation
+│   │   ├── core/               # Core server components and configuration
+│   │   ├── plugins/            # Dataset-specific plugins
+│   │   │   └── tariffs/        # Tariff-specific tools and analysis
+│   │   ├── server.py           # Main server implementation
+│   │   └── __main__.py         # Entry point for MCP server
+│   └── tariffs_db/             # Database build tools for tariff data
 ├── data/                       # Downloaded and processed tariff data
 │   └── usitc_data/
+├── logs/                       # Query and request logs
+├── start_enhanced_server.py    # Legacy server starter (for development)
 ├── pyproject.toml             # Project dependencies and configuration
+├── MCP_CLIENT_CONFIG.md       # MCP client configuration guide
 └── README.md                  # This file
 ```
 
@@ -40,9 +48,9 @@ mcp-tarrifs/
 - Python 3.10 or higher
 - `uv` package manager (install with `pip install uv` or `brew install uv`)
 
-### Option 1: Complete Setup (Recommended)
+### Option 1: Complete Setup (Recommended for MCP Clients)
 
-Build the database and get MCP client configuration:
+Build the database and configure for MCP clients:
 
 ```bash
 # Clone the repository
@@ -52,54 +60,42 @@ cd mcp-tarrifs
 # Install dependencies
 uv sync
 
-# Build database and get configuration info
-python scripts/build_and_serve.py --build-only
+# Build database (one-time setup)
+python scripts/mcp_server_launcher.py --build-only
 
-# Or show just the configuration
-python scripts/build_and_serve.py --config-only
-
-# Or from outside the project directory
-uv run --project /Users/jmabry/repos/mcp-tarrifs python /Users/jmabry/repos/mcp-tarrifs/scripts/build_and_serve.py --build-only
+# Get MCP client configuration
+cat MCP_CLIENT_CONFIG.md
 ```
 
 This will:
 - Download 10 years of USITC tariff data (2015-2024)
 - Extract and load data into DuckDB
-- Provide configuration for MCP clients (Perplexity, Claude, etc.)
+- Provide ready-to-use configuration for MCP clients
 
-### Option 2: Interactive Mode (Testing)
+⚠️ **Important**: For MCP clients, use the configurations in `MCP_CLIENT_CONFIG.md`, not the interactive scripts below.
 
-To test the MCP server interactively:
+### Option 2: Interactive Development Mode
+
+For development and testing:
 
 ```bash
 # Build database and start interactive server
-python scripts/build_and_serve.py
+python scripts/mcp_server_launcher.py
 
-# Or from outside the project directory
-uv run --project /Users/jmabry/repos/mcp-tarrifs python /Users/jmabry/repos/mcp-tarrifs/scripts/build_and_serve.py
+# Or use the enhanced development server
+python start_enhanced_server.py
 ```
 
-This mode starts the server using stdio transport for direct MCP client communication.
+### Option 3: Manual Database Building
 
-### Option 3: Web Server Mode (Legacy)
-
-If you need an HTTP server for testing or web-based clients:
+If you need to rebuild or customize the database:
 
 ```bash
-# Start HTTP server on port 8000
-python scripts/run_enhanced_server.py
-```
+# Build database with specific options
+uv run python src/tariffs_db/db_build.py --all --years 10
 
-### Option 4: Test Existing Setup
-
-If you already have the database built, test the MCP server functionality:
-
-```bash
-# Test the enhanced MCP server (from within project directory)
-python scripts/test_enhanced_client.py
-
-# Or from outside the project directory
-uv run --project /Users/jmabry/repos/mcp-tarrifs python /Users/jmabry/repos/mcp-tarrifs/scripts/test_enhanced_client.py
+# Or build for specific years
+uv run python src/tariffs_db/db_build.py --years 5  # Last 5 years only
 ```
 
 ## 📊 Database Contents
@@ -115,78 +111,59 @@ The processed database contains 10 tables with comprehensive tariff information:
 ### Sample Table Structure
 
 Each year's data includes columns like:
-- `HS_Number`: Harmonized System classification code
-- `Brief_Description`: Product description
-- `General_Rate_of_Duty`: Standard tariff rate
-- `Special_Rate_of_Duty`: Preferential rates
-- `Column_2_Rate_of_Duty`: Alternative duty rates
-- `Units_of_Quantity`: Measurement units
+- `hts8`: 8-digit Harmonized Tariff Schedule codes
+- `brief_description`: Product description
+- `mfn_text_rate`: Most Favored Nation tariff rate
+- `general_rate_of_duty`: Standard tariff rate
+- `special_rate_of_duty`: Preferential rates
+- `column_2_rate_of_duty`: Alternative duty rates
+- `units_of_quantity`: Measurement units
+- `country`: Country-specific information
+
+## 🧩 Plugin Architecture
+
+The server features a modular plugin system for specialized functionality:
+
+### Tariff Plugin Features
+
+- **Smart Product Search**: Search by HTS codes or natural language descriptions
+- **Multi-year Comparisons**: Track tariff rate changes over time
+- **Country-specific Analysis**: Filter and compare rates by trading partner
+- **HTS Code Intelligence**: Understand product classification hierarchy
+- **Guided Analysis**: Built-in prompts for common tariff analysis patterns
+
+### Available Analysis Tools
+
+```python
+# Example tool usage through MCP clients
+get_tariff_rates(
+    product_search="automobiles",
+    country="china", 
+    year=2024
+)
+
+compare_tariff_rates(
+    product_code="8703.23.00",
+    years=[2020, 2021, 2022, 2023, 2024]
+)
+```
 
 ## 🛠️ Available Scripts
 
-### `scripts/build_and_serve.py`
-
-**Purpose**: Complete end-to-end setup and server launch
-
-**Features**:
-- Checks for existing database
-- Downloads and processes USITC data if needed
-- Starts MCP server with appropriate configuration
-- Provides status updates and server information
-
-**Usage**:
-```bash
-# From within project directory
-python scripts/build_and_serve.py
-
-# From outside project directory
-uv run --project /Users/jmabry/repos/mcp-tarrifs python /Users/jmabry/repos/mcp-tarrifs/scripts/build_and_serve.py
-```
-
-**Output**:
-- Database at: `data/usitc_data/usitc_trade_data.db`
-- MCP Server at: `http://127.0.0.1:8000/mcp`
-- Read-only access for safe querying
-
-### `scripts/test_enhanced_client.py`
-
-**Purpose**: Comprehensive testing of MCP server functionality
-
-**Features**:
-- Tests MCP server initialization
-- Validates all available tools
-- Demonstrates query capabilities
-- Shows data structure and content
-
-**Usage**:
-```bash
-# From within project directory
-python scripts/test_enhanced_client.py
-
-# From outside project directory
-uv run --project /Users/jmabry/repos/mcp-tarrifs python /Users/jmabry/repos/mcp-tarrifs/scripts/test_enhanced_client.py
-```
-
-**Tests Include**:
-- Server connectivity and initialization
-- Tool discovery (`list_tables`, `get_schema`, `get_sample_data`)
-- Query safety and validation
-- Data exploration capabilities
-
 ### `scripts/mcp_server_launcher.py`
 
-**Purpose**: MCP-client friendly server launcher with database logging
+**Purpose**: MCP-compatible server launcher with automated database setup
 
 **Features**:
 - Automatic database building if needed
+- MCP STDIO-compatible output
 - DuckDB query logging setup
-- Minimal output to stdout (MCP STDIO compatible)
 - Read-only server mode by default
 - Creates and manages logs directory
 
 **Usage**:
 ```bash
-# Build database and start server (MCP compatible)
+# Build database and start MCP server (STDIO mode)
 python scripts/mcp_server_launcher.py
 
 # Only build database, don't start server
@@ -196,22 +173,56 @@ python scripts/mcp_server_launcher.py --build-only
 python scripts/mcp_server_launcher.py --no-logging
 ```
 
-**Logging Features**:
-- Automatically creates `logs/` directory
-- Configures DuckDB to log queries to `logs/queries.log`
-- Updates `~/.duckdbrc` with logging settings
-- Logs directory is ignored by Git
+**Output**:
+- Database at: `data/usitc_data/usitc_trade_data.db`
+- Logs at: `logs/queries.log` and `logs/mcp_requests.log`
+- STDIO transport for MCP client communication
+
+### `start_enhanced_server.py`
+
+**Purpose**: Development server with enhanced logging and HTTP mode
+
+**Features**:
+- HTTP server mode for web clients
+- Enhanced request logging
+- Development-friendly output
+- Status monitoring
+
+**Usage**:
+```bash
+# Start development server
+python start_enhanced_server.py
+```
+
+**Note**: This script is for development only. Use `mcp_server_launcher.py` for MCP clients.
 
 ## 🔧 MCP Server Tools
 
-The enhanced MCP server provides specialized tools for tariff data analysis:
+The unified MCP server provides both core database tools and specialized tariff analysis capabilities:
 
-### Core Tools
+### Core Database Tools
 
 - **`list_tables`**: Show all available tariff tables
 - **`get_schema`**: Get column information for tables
 - **`get_sample_data`**: Preview table contents
 - **`query`**: Execute SQL queries on tariff data
+
+### Specialized Tariff Tools
+
+- **`get_tariff_rates`**: Get tariff rates for specific products by HTS code or description search
+  - Search by HTS code (e.g., `'0101.21.00'`)
+  - Search by product description (e.g., `'horses'`, `'automobiles'`)
+  - Filter by country and year
+  
+- **`compare_tariff_rates`**: Compare tariff rates across years or for different products
+  - Compare specific HTS codes across multiple years
+  - Analyze rate changes over time
+  - Compare rates for different countries
+
+### Tariff Analysis Prompts
+
+- **`tariff-analysis-guide`**: Comprehensive guide for analyzing tariff data and understanding trade patterns
+- **`hts-code-lookup`**: Help with HTS (Harmonized Tariff Schedule) code lookups and product classification
 
 ### Example Queries
 
@@ -221,69 +232,44 @@ Once the server is running, you can ask AI assistants questions like:
 - "Compare tariff rates between 2015 and 2024 for electronics"
 - "What are the most common tariff rates for agricultural products?"
 - "Find all products with special duty rates"
+- "Get tariff rates for HTS code 8703.23.00 across all years"
+- "Search for tariff rates on textile products"
 
 ## 💻 Integration with MCP Clients
 
-The recommended approach is to use stdio transport for direct integration with MCP clients.
+⚠️ **Important**: Use the configurations in `MCP_CLIENT_CONFIG.md` for proper MCP client setup.
 
-### Perplexity
+The server uses STDIO transport for direct integration with MCP clients. **Do not use the development scripts** (`start_enhanced_server.py`) with MCP clients.
 
-Add this configuration to your MCP settings:
+### Quick Configuration Summary
+
+For MCP clients, use this pattern:
 
 ```json
 {
-  "name": "usitc-tariffs",
-  "command": "python",
+  "command": "uv",
   "args": [
-    "-m", "mcp_server_motherduck.server",
+    "run",
+    "--project", "/path/to/mcp-tarrifs",
+    "python", "-m", "mcp_server",
     "--db-path", "/path/to/mcp-tarrifs/data/usitc_data/usitc_trade_data.db",
     "--read-only"
-  ],
-  "cwd": "/path/to/mcp-tarrifs/src"
+  ]
 }
 ```
 
-### Claude Desktop
+### Supported Clients
 
-Add to your `claude_desktop_config.json`:
+- **Claude Desktop**: Full configuration in `MCP_CLIENT_CONFIG.md`
+- **Cursor/VS Code**: MCP extension configuration included
+- **Perplexity**: JSON configuration provided
+- **Other MCP clients**: Use the STDIO transport pattern above
 
-```json
-{
-  "mcpServers": {
-    "usitc-tariffs": {
-      "command": "python",
-      "args": [
-        "-m", "mcp_server_motherduck.server",
-        "--db-path", "/path/to/mcp-tarrifs/data/usitc_data/usitc_trade_data.db",
-        "--read-only"
-      ],
-      "cwd": "/path/to/mcp-tarrifs/src"
-    }
-  }
-}
-```
+### Configuration Files
 
-### Cursor / VS Code
-
-Add to your MCP configuration:
-
-```json
-{
-  "mcp": {
-    "servers": {
-      "usitc-tariffs": {
-        "command": "python",
-        "args": [
-          "-m", "mcp_server_motherduck.server",
-          "--db-path", "/path/to/mcp-tarrifs/data/usitc_data/usitc_trade_data.db",
-          "--read-only"
-        ],
-        "cwd": "/path/to/mcp-tarrifs/src"
-      }
-    }
-  }
-}
-```
+- `MCP_CLIENT_CONFIG.md`: Complete setup instructions for all major MCP clients
+- Includes copy-paste ready configurations
+- Contains troubleshooting for common issues
 
 ## 🗂️ Data Sources
 
@@ -298,24 +284,54 @@ This project uses official USITC (United States International Trade Commission) 
 
 ### Project Components
 
-1. **Core MCP Server** (`src/mcp_server_motherduck/`):
-   - Basic MotherDuck/DuckDB MCP implementation
-   - Standard SQL query capabilities
-   - See [dedicated README](src/mcp_server_motherduck/README.md)
+1. **Unified MCP Server** (`src/mcp_server/`):
+   - Plugin-based architecture for modular functionality
+   - Core database operations and SQL query capabilities
+   - Specialized tariff analysis tools and prompts
 
-2. **Enhanced Tariff Server** (`src/tariffs_mcp/`):
-   - Specialized tools for tariff data
-   - Data download and processing utilities
-   - Enhanced query capabilities
+2. **Tariff Plugin** (`src/mcp_server/plugins/tariffs/`):
+   - Tariff-specific tools (`get_tariff_rates`, `compare_tariff_rates`)
+   - HTS code analysis and product search capabilities
+   - Guided prompts for tariff analysis
+
+3. **Database Build Tools** (`src/tariffs_db/`):
+   - USITC data download and processing utilities
+   - Database schema creation and data loading
+   - Data validation and cleanup tools
+
+4. **Core Configuration** (`src/mcp_server/core/`):
+   - Server configuration and logging setup
+   - Database client management
+   - Reusable components for plugins
+
+### Plugin Architecture
+
+The server uses a plugin system for dataset-specific functionality:
+
+```python
+# Example plugin structure
+class TariffsPlugin(DatasetPlugin):
+    def get_specialized_tools(self) -> list[types.Tool]:
+        # Return tariff-specific tools
+    
+    def get_prompts(self) -> list[types.Prompt]:
+        # Return analysis guidance prompts
+    
+    async def handle_tool_call(self, name: str, arguments: dict, db_client):
+        # Handle tool execution
+```
 
 ### Running Tests
 
 ```bash
-# Test basic functionality
-python scripts/test_enhanced_client.py
+# Test server functionality (requires database)
+uv run python -m pytest tests/
 
-# Test data download (without building full database)
-uv run python src/tariffs_mcp/db_build.py --help
+# Test basic server startup
+python scripts/mcp_server_launcher.py --build-only
+
+# Test with development server
+python start_enhanced_server.py
 ```
 
 ### Rebuilding Database
@@ -326,8 +342,11 @@ To rebuild the database from scratch:
 # Remove existing database
 rm data/usitc_data/usitc_trade_data.db
 
-# Run build script again
-python scripts/build_and_serve.py
+# Rebuild with full dataset
+python scripts/mcp_server_launcher.py --build-only
+
+# Or rebuild manually with options
+uv run python src/tariffs_db/db_build.py --all --years 10
 ```
 
 ## 📈 Performance
@@ -353,20 +372,35 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 
 ### Common Issues
 
-**"Database not found"**: Run `python scripts/build_and_serve.py` to build the database
+**"Database not found"**: Run `python scripts/mcp_server_launcher.py --build-only` to build the database
 
-**"Server not responding"**: Check that port 8000 is available and server started successfully
+**"Server not responding in MCP client"**: 
+- Check that you're using the configuration from `MCP_CLIENT_CONFIG.md`
+- Ensure the database path is correct in your MCP client configuration
+- Don't use `start_enhanced_server.py` with MCP clients
 
-**"Permission denied"**: Ensure you have write access to the `data/` directory
+**"Permission denied"**: Ensure you have write access to the `data/` and `logs/` directories
 
 **"Module not found"**: Run `uv sync` to install dependencies
 
+**"MCP client can't connect"**:
+- Verify the server command in your MCP client configuration
+- Check that the database file exists at the specified path
+- Use absolute paths in MCP client configurations
+
 ### Getting Help
 
-1. Check the server logs when running `build_and_serve.py`
-2. Run the test client to verify functionality
+1. Check the server startup logs when running `mcp_server_launcher.py`
+2. Review configurations in `MCP_CLIENT_CONFIG.md`
 3. Ensure all dependencies are installed with `uv sync`
 4. Check that the database file exists at `data/usitc_data/usitc_trade_data.db`
+5. For MCP client issues, verify STDIO transport is working correctly
+
+### Development vs Production
+
+- **For MCP Clients**: Use `scripts/mcp_server_launcher.py` with configurations from `MCP_CLIENT_CONFIG.md`
+- **For Development**: Use `start_enhanced_server.py` for HTTP mode and enhanced logging
+- **For Testing**: Both scripts support the same database but have different transport modes
 
 ---
 

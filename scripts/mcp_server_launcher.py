@@ -54,7 +54,7 @@ def ensure_database_exists():
         print("Building USITC tariff database...", file=sys.stderr)
         try:
             subprocess.run([
-                "uv", "run", "python", "src/tariffs_mcp/db_build.py", 
+                "uv", "run", "python", "src/tariffs_db/db_build.py", 
                 "--all", "--years", "10"
             ], 
             cwd=PROJECT_ROOT, 
@@ -69,16 +69,20 @@ def ensure_database_exists():
             sys.exit(1)
 
 def start_mcp_server(db_path: str, read_only: bool = True):
-    """Start the MCP server using the script entry point"""
+    """Start the unified MCP server"""
     import subprocess
     
-    cmd = ["uv", "run", "mcp-server-motherduck", "--db-path", db_path]
+    cmd = ["uv", "run", "python", "-m", "mcp_server"]
+    
+    # Set environment variables for server configuration
+    env = os.environ.copy()
+    env["DB_PATH"] = db_path
     if read_only:
-        cmd.append("--read-only")
+        env["READ_ONLY"] = "true"
     
     try:
-        # Run the server directly using the script entry point
-        subprocess.run(cmd, cwd=PROJECT_ROOT, check=True)
+        # Run the unified server
+        subprocess.run(cmd, cwd=PROJECT_ROOT, env=env, check=True)
     except KeyboardInterrupt:
         print("Server stopped by user", file=sys.stderr)
     except subprocess.CalledProcessError as e:
