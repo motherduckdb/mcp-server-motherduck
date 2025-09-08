@@ -6,12 +6,12 @@ A comprehensive MCP (Model Context Protocol) server implementation for accessing
 
 This project combines two powerful components:
 
-1. **USITC Tariff Data Downloader**: Automatically downloads, extracts, and loads 10 years of US tariff data into a DuckDB database
+1. **USITC Tariff Data Downloader**: Automatically downloads, extracts, and loads 11 years of US tariff data into a DuckDB database
 2. **Unified MCP Server**: Provides specialized tariff analysis tools and SQL capabilities through MCP clients like Claude, Cursor, and VS Code
 
 ## ✨ Features
 
-- **Automated Data Collection**: Downloads and processes 10 years of USITC tariff data (2015-2024)
+- **Automated Data Collection**: Downloads and processes 11 years of USITC tariff data (2015-2025)
 - **DuckDB Integration**: High-performance analytics database with 142K+ rows of tariff information
 - **Unified MCP Server**: Query tariff data through AI assistants using natural language
 - **Specialized Tariff Tools**: Purpose-built tools for tariff analysis, comparison, and HTS code lookup
@@ -68,7 +68,7 @@ cat MCP_CLIENT_CONFIG.md
 ```
 
 This will:
-- Download 10 years of USITC tariff data (2015-2024)
+- Download 11 years of USITC tariff data (2015-2025)
 - Extract and load data into DuckDB
 - Provide ready-to-use configuration for MCP clients
 
@@ -92,7 +92,7 @@ If you need to rebuild or customize the database:
 
 ```bash
 # Build database with specific options
-uv run python src/tariffs_db/db_build.py --all --years 10
+uv run python src/tariffs_db/db_build.py --all --years 11
 
 # Or build for specific years
 uv run python src/tariffs_db/db_build.py --years 5  # Last 5 years only
@@ -102,7 +102,7 @@ uv run python src/tariffs_db/db_build.py --years 5  # Last 5 years only
 
 The processed database contains 10 tables with comprehensive tariff information:
 
-- **142,000+ rows** of tariff data across 10 years (2015-2024)
+- **155,000+ rows** of tariff data across 11 years (2015-2025)
 - **Harmonized System (HS) codes** and descriptions
 - **Tariff rates** (General, Special, Column 2)
 - **Trade statistics** and classifications
@@ -276,7 +276,7 @@ For MCP clients, use this pattern:
 This project uses official USITC (United States International Trade Commission) tariff data:
 
 - **Source**: [USITC DataWeb](https://dataweb.usitc.gov/)
-- **Coverage**: 2015-2024 (10 years)
+- **Coverage**: 2015-2025 (11 years)
 - **Format**: Annual tariff databases in Excel and text formats
 - **Update Frequency**: Updated when new annual data is released
 
@@ -346,12 +346,12 @@ rm data/usitc_data/usitc_trade_data.db
 python scripts/mcp_server_launcher.py --build-only
 
 # Or rebuild manually with options
-uv run python src/tariffs_db/db_build.py --all --years 10
+uv run python src/tariffs_db/db_build.py --all --years 11
 ```
 
 ## 📈 Performance
 
-- **Database Size**: ~50MB for 10 years of data
+- **Database Size**: ~55MB for 11 years of data
 - **Query Performance**: Sub-second response for most queries
 - **Memory Usage**: Minimal - DuckDB is highly efficient
 - **Concurrent Access**: Read-only mode supports multiple connections
@@ -404,4 +404,4 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 
 ---
 
-**🎉 Happy Analyzing!** This project brings 10 years of US tariff data to your fingertips through the power of MCP and AI assistants.
+**🎉 Happy Analyzing!** This project brings 11 years of US tariff data to your fingertips through the power of MCP and AI assistants.

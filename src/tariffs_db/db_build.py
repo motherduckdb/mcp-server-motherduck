@@ -9,7 +9,7 @@ Usage examples:
     python usitc_downloader.py --download --years 5
     python usitc_downloader.py --load
     python usitc_downloader.py --query
-    python usitc_downloader.py --all --years 10
+    python usitc_downloader.py --all --years 11
 """
 
 import os
@@ -85,11 +85,11 @@ class USITCDataManager:
                 self.logger.info(f"Connected to database: {self.db_path}")
             return self._conn
 
-    def get_years_to_download(self, num_years=10):
-        """Get list of years to download (last N years)"""
+    def get_years_to_download(self, num_years=11):
+        """Get list of years to download (last N years including current year)"""
         current_year = datetime.now().year
-        # Since we're in 2025, go back from 2024 (most recent complete year)
-        start_year = current_year - 1
+        # Include 2025 data if available
+        start_year = current_year
         years = list(range(start_year - num_years + 1, start_year + 1))
         self.logger.info(f"Target years for download: {years}")
         return years
@@ -444,7 +444,7 @@ class USITCDataManager:
             self.logger.error(f"Error running sample queries: {e}")
 
     # Main operation methods
-    def download_data(self, num_years=10):
+    def download_data(self, num_years=11):
         """Download zip files for specified years"""
         self.logger.info(f"=== DOWNLOAD OPERATION: {num_years} years ===")
         
@@ -548,7 +548,7 @@ Examples:
   %(prog)s --download --years 5           # Download last 5 years only
   %(prog)s --load                         # Extract and load downloaded files
   %(prog)s --query                        # Run sample queries on database
-  %(prog)s --all --years 10               # Do everything for last 10 years
+  %(prog)s --all --years 11               # Do everything for 2015-2025 (default)
   %(prog)s --download --load --years 3    # Download and load last 3 years
         """
     )
@@ -564,8 +564,8 @@ Examples:
                        help='Perform all operations (download, load, query)')
     
     # Configuration arguments
-    parser.add_argument('--years', type=int, default=10,
-                       help='Number of years to download (default: 10)')
+    parser.add_argument('--years', type=int, default=11,
+                       help='Number of years to download (default: 11, includes 2015-2025)')
     parser.add_argument('--base-dir', default='./data/usitc_data',
                        help='Base directory for data storage (default: ./data/usitc_data)')
     parser.add_argument('--db-name', default='usitc_trade_data.db',

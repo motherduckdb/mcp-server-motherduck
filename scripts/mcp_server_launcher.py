@@ -55,7 +55,7 @@ def ensure_database_exists():
         try:
             subprocess.run([
                 "uv", "run", "python", "src/tariffs_db/db_build.py", 
-                "--all", "--years", "10"
+                "--all", "--years", "11"
             ], 
             cwd=PROJECT_ROOT, 
             check=True,
