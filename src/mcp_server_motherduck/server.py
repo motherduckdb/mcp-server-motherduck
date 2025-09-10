@@ -13,21 +13,22 @@ logger = logging.getLogger("mcp_server_motherduck")
 
 
 def build_application(
-    db_path: str,
+    db_path: str | None = None,
     motherduck_token: str | None = None,
     home_dir: str | None = None,
     saas_mode: bool = False,
     read_only: bool = False,
 ):
-    logger.info("Starting MotherDuck MCP Server")
+    logger.info("Starting MotherDuck MCP Server with dynamic database support")
     server = Server("mcp-server-motherduck")
+    current_db_path = db_path if db_path else "md:"
     db_client = DatabaseClient(
-        db_path=db_path,
         motherduck_token=motherduck_token,
         home_dir=home_dir,
         saas_mode=saas_mode,
         read_only=read_only,
     )
+    
 
     logger.info("Registering handlers")
 
@@ -95,6 +96,7 @@ def build_application(
         List available tools.
         Each tool specifies its arguments using JSON Schema validation.
         """
+        nonlocal current_db_path
         logger.info("Listing tools")
         return [
             types.Tool(
@@ -107,8 +109,42 @@ def build_application(
                             "type": "string",
                             "description": "SQL query to execute that is a dialect of DuckDB SQL",
                         },
+                        "db_path": {
+                            "type": "string",
+                            "description": f"Path to the database (e.g., ':memory:', 'path/to/database.db', 'md:my_database'). Defaults to '{current_db_path}' if not specified.",
+                        },
                     },
                     "required": ["query"],
+                },
+            ),
+            types.Tool(
+                name="list_databases",
+                description="List available databases including MotherDuck databases and local DuckDB files",
+                inputSchema={
+                    "type": "object",
+                    "properties": {},
+                },
+            ),
+            types.Tool(
+                name="set_database",
+                description="Set the database path for future queries",
+                inputSchema={
+                    "type": "object",
+                    "properties": {
+                        "db_path": {
+                            "type": "string",
+                            "description": "The database path to set as (e.g., 'md:', ':memory:', 'path/to/database.db')",
+                        },
+                    },
+                    "required": ["db_path"],
+                },
+            ),
+            types.Tool(
+                name="get_database",
+                description="Get the current database path",
+                inputSchema={
+                    "type": "object",
+                    "properties": {},
                 },
             ),
         ]
@@ -121,6 +157,7 @@ def build_application(
         Handle tool execution requests.
         Tools can modify server state and notify clients of changes.
         """
+        nonlocal current_db_path
         logger.info(f"Calling tool: {name}::{arguments}")
         try:
             if name == "query":
@@ -128,8 +165,40 @@ def build_application(
                     return [
                         types.TextContent(type="text", text="Error: No query provided")
                     ]
-                tool_response = db_client.query(arguments["query"])
+                query = arguments["query"]
+                db_path = arguments.get("db_path", current_db_path)
+                tool_response = db_client.query(query, db_path)
                 return [types.TextContent(type="text", text=str(tool_response))]
+            
+            elif name == "list_databases":
+                databases = db_client.list_available_databases()
+                return [types.TextContent(type="text", text=databases)]
+            
+            elif name == "set_database":
+                if arguments is None or "db_path" not in arguments:
+                    return [
+                        types.TextContent(type="text", text="Error: No database path provided")
+                    ]
+                new_path = arguments["db_path"]
+                # Validate the path is accessible
+                try:
+                    db_client.validate_database_path(new_path)
+                    current_db_path = new_path
+                    return [types.TextContent(
+                        type="text", 
+                        text=f"Database path changed to '{current_db_path}'"
+                    )]
+                except Exception as e:
+                    return [types.TextContent(
+                        type="text", 
+                        text=f"Error setting database path: {str(e)}"
+                    )]
+            
+            elif name == "get_database":
+                return [types.TextContent(
+                    type="text", 
+                    text=f"Current database path: '{current_db_path}'"
+                )]
 
             return [types.TextContent(type="text", text=f"Unsupported tool: {name}")]
 
