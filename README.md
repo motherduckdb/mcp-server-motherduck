@@ -42,7 +42,7 @@ The MCP server supports the following parameters:
 |-----------|------|---------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `--transport` | Choice | `stdio` | Transport type. Options: `stdio`, `sse`, `stream`                                                                                                                                                                                                              |
 | `--port` | Integer | `8000` | Port to listen on for sse and stream transport mode                                                                                                                                                                                                            |
-| `--db-path` | String | `md:` | Path to local DuckDB database file or MotherDuck database                                                                                                                                                                                                      |
+| `--db-path` | String | `md:` | Path to local DuckDB database file, MotherDuck database, or S3 URL (e.g., `s3://bucket/path/to/db.duckdb`)                                                                                                                                                     |
 | `--motherduck-token` | String | `None` | Access token to use for MotherDuck database connections (uses `motherduck_token` env var by default)                                                                                                                                                           |
 | `--read-only` | Flag | `False` | Flag for connecting to DuckDB or MotherDuck in read-only mode. For DuckDB it uses short-lived connections to enable concurrent access                                                                                                                          |
 | `--home-dir` | String | `None` | Home directory for DuckDB (uses `HOME` env var by default)                                                                                                                                                                                                     |
@@ -336,6 +336,37 @@ feature was motivated by a workflow where [DBT](https://www.getdbt.com) was for
 modeling data within duckdb and then an MCP client (Windsurf/Cline/Claude/Cursor)
 was used for exploring the database. The short lived connections allow each tool
 to run and then release their connection, allowing the next tool to connect.
+
+## Connect to DuckDB on S3
+
+You can connect to DuckDB databases stored on Amazon S3 by providing an S3 URL as the database path. The server will automatically configure the necessary S3 credentials from your environment variables.
+
+```json
+{
+  "mcpServers": {
+    "mcp-server-motherduck": {
+      "command": "uvx",
+      "args": [
+        "mcp-server-motherduck",
+        "--db-path",
+        "s3://your-bucket/path/to/database.duckdb"
+      ],
+      "env": {
+        "AWS_ACCESS_KEY_ID": "<your_key>",
+        "AWS_SECRET_ACCESS_KEY": "<your_secret>",
+        "AWS_DEFAULT_REGION": "<your_region>"
+      }
+    }
+  }
+}
+```
+
+
+**Note**: For S3 connections:
+- AWS credentials must be provided via environment variables (`AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, and optionally `AWS_DEFAULT_REGION`)
+- The S3 database is attached to an in-memory DuckDB instance
+- The httpfs extension is automatically installed and configured for S3 access
+- Both read and write operations are supported
 
 ## Example Queries
 

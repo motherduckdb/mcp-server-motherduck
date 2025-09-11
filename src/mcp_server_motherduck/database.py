@@ -36,6 +36,10 @@ class DatabaseClient:
 
         logger.info(f"🔌 Connecting to {self.db_type} database")
 
+        # S3 databases don't support read-only mode
+        if self.db_type == "s3" and self._read_only:
+            raise ValueError("Read-only mode is not supported for S3 databases")
+
         if self.db_type == "duckdb" and self._read_only:
             # check that we can connect, issue a `select 1` and then close + return None
             try:
@@ -53,6 +57,66 @@ class DatabaseClient:
                 logger.error(f"❌ Read-only check failed: {e}")
                 raise
 
+        # Check if this is an S3 path
+        if self.db_type == "s3":
+            # For S3, we need to create an in-memory connection and attach the S3 database
+            conn = duckdb.connect(':memory:')
+            
+            # Install and load the httpfs extension for S3 support
+            import io
+            from contextlib import redirect_stdout, redirect_stderr
+            
+            null_file = io.StringIO()
+            with redirect_stdout(null_file), redirect_stderr(null_file):
+                try:
+                    conn.execute("INSTALL httpfs;")
+                except:
+                    pass  # Extension might already be installed
+                conn.execute("LOAD httpfs;")
+            
+            # Configure S3 credentials from environment variables using CREATE SECRET
+            aws_access_key = os.environ.get('AWS_ACCESS_KEY_ID')
+            aws_secret_key = os.environ.get('AWS_SECRET_ACCESS_KEY')
+            aws_region = os.environ.get('AWS_DEFAULT_REGION', 'us-east-1')
+            
+            
+            if aws_access_key and aws_secret_key:
+                # Use CREATE SECRET for better credential management
+                conn.execute(f"""
+                    CREATE SECRET IF NOT EXISTS s3_secret (
+                        TYPE S3,
+                        KEY_ID '{aws_access_key}',
+                        SECRET '{aws_secret_key}',
+                        REGION '{aws_region}'
+                    );
+                """)
+            
+            # Attach the S3 database
+            try:
+                # For S3, we always attach as READ_ONLY since S3 storage is typically read-only
+                # Even when not in read_only mode, we attach as READ_ONLY for S3
+                conn.execute(f"ATTACH '{self.db_path}' AS s3db (READ_ONLY);")
+                # Use the attached database
+                conn.execute("USE s3db;")
+                logger.info(f"✅ Successfully connected to {self.db_type} database (attached as read-only)")
+            except Exception as e:
+                logger.error(f"Failed to attach S3 database: {e}")
+                # If the database doesn't exist and we're not in read-only mode, try to create it
+                if "database does not exist" in str(e) and not self._read_only:
+                    logger.info("S3 database doesn't exist, attempting to create it...")
+                    try:
+                        # Create a new database at the S3 location
+                        conn.execute(f"ATTACH '{self.db_path}' AS s3db;")
+                        conn.execute("USE s3db;")
+                        logger.info(f"✅ Created new S3 database at {self.db_path}")
+                    except Exception as create_error:
+                        logger.error(f"Failed to create S3 database: {create_error}")
+                        raise
+                else:
+                    raise
+                
+            return conn
+
         conn = duckdb.connect(
             self.db_path,
             config={"custom_user_agent": f"mcp-server-motherduck/{SERVER_VERSION}"},
@@ -65,8 +129,12 @@ class DatabaseClient:
 
     def _resolve_db_path_type(
         self, db_path: str, motherduck_token: str | None = None, saas_mode: bool = False
-    ) -> tuple[str, Literal["duckdb", "motherduck"]]:
+    ) -> tuple[str, Literal["duckdb", "motherduck", "s3"]]:
         """Resolve and validate the database path"""
+        # Handle S3 paths
+        if db_path.startswith("s3://"):
+            return db_path, "s3"
+        
         # Handle MotherDuck paths
         if db_path.startswith("md:"):
             if motherduck_token:
@@ -102,7 +170,7 @@ class DatabaseClient:
 
     def _execute(self, query: str) -> str:
         if self.conn is None:
-            # open short lived readonly connection, run query, close connection, return result
+            # open short lived readonly connection for local DuckDB, run query, close connection, return result
             conn = duckdb.connect(
                 self.db_path,
                 config={"custom_user_agent": f"mcp-server-motherduck/{SERVER_VERSION}"},
