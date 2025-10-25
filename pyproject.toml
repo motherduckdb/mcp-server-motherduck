@@ -23,5 +23,11 @@ email = "till@motherduck.com"
 requires = [ "hatchling",]
 build-backend = "hatchling.build"
 
+[dependency-groups]
+dev = [
+    "moto>=5.1.15",
+    "pytest>=8.4.2",
+]
+
 [project.scripts]
 mcp-server-motherduck = "mcp_server_motherduck:main"

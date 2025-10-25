@@ -1,8 +1,6 @@
 import os
 import duckdb
 from typing import Literal, Optional
-import io
-from contextlib import redirect_stdout
 from tabulate import tabulate
 import logging
 from .configs import SERVER_VERSION
