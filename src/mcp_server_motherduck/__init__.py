@@ -14,6 +14,7 @@ logging.basicConfig(
 
 @click.command()
 @click.option("--port", default=8000, help="Port to listen on for SSE")
+@click.option("--host", default=SERVER_LOCALHOST, help="Host to bind the MCP server")
 @click.option(
     "--transport",
     type=click.Choice(["stdio", "sse", "stream"]),
@@ -53,6 +54,7 @@ logging.basicConfig(
 )
 def main(
     port,
+    host,
     transport,
     db_path,
     motherduck_token,
@@ -92,7 +94,7 @@ def main(
             return Response()
 
         logger.info(
-            f"🦆 Connect to MotherDuck MCP Server at \033[1m\033[36mhttp://{SERVER_LOCALHOST}:{port}/sse\033[0m"
+            f"🦆 Connect to MotherDuck MCP Server at \033[1m\033[36mhttp://{host}:{port}/sse\033[0m"
         )
 
         starlette_app = Starlette(
@@ -107,7 +109,7 @@ def main(
 
         uvicorn.run(
             starlette_app,
-            host=SERVER_LOCALHOST,
+            host=host,
             port=port,
             log_config=UVICORN_LOGGING_CONFIG,
         )
@@ -148,7 +150,7 @@ def main(
                     )
 
         logger.info(
-            f"🦆 Connect to MotherDuck MCP Server at \033[1m\033[36mhttp://{SERVER_LOCALHOST}:{port}/mcp\033[0m"
+            f"🦆 Connect to MotherDuck MCP Server at \033[1m\033[36mhttp://{host}:{port}/mcp\033[0m"
         )
 
         # Create an ASGI application using the transport
@@ -164,7 +166,7 @@ def main(
 
         uvicorn.run(
             starlette_app,
-            host=SERVER_LOCALHOST,
+            host=host,
             port=port,
             log_config=UVICORN_LOGGING_CONFIG,
         )
