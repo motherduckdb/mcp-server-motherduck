@@ -1,8 +1,6 @@
 import os
 import duckdb
 from typing import Literal, Optional
-import io
-from contextlib import redirect_stdout
 from tabulate import tabulate
 import logging
 from .configs import SERVER_VERSION
@@ -77,16 +75,27 @@ class DatabaseClient:
             # Configure S3 credentials from environment variables using CREATE SECRET
             aws_access_key = os.environ.get('AWS_ACCESS_KEY_ID')
             aws_secret_key = os.environ.get('AWS_SECRET_ACCESS_KEY')
+            aws_session_token = os.environ.get('AWS_SESSION_TOKEN')
             aws_region = os.environ.get('AWS_DEFAULT_REGION', 'us-east-1')
             
             
-            if aws_access_key and aws_secret_key:
+            if aws_access_key and aws_secret_key and not aws_session_token:
                 # Use CREATE SECRET for better credential management
                 conn.execute(f"""
                     CREATE SECRET IF NOT EXISTS s3_secret (
                         TYPE S3,
                         KEY_ID '{aws_access_key}',
                         SECRET '{aws_secret_key}',
+                        REGION '{aws_region}'
+                    );
+                """)
+            elif aws_session_token:
+                # Use credential_chain provider to automatically fetch credentials
+                # This supports IAM roles, SSO, instance profiles, etc.
+                conn.execute(f"""
+                    CREATE SECRET IF NOT EXISTS s3_secret (
+                        TYPE S3,
+                        PROVIDER credential_chain,
                         REGION '{aws_region}'
                     );
                 """)
