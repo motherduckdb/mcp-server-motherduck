@@ -18,8 +18,12 @@ class DatabaseClient:
         home_dir: str | None = None,
         saas_mode: bool = False,
         read_only: bool = False,
+        max_rows: int = 1024,
+        max_chars: int = 50000,
     ):
         self._read_only = read_only
+        self._max_rows = max_rows
+        self._max_chars = max_chars
         self.db_path, self.db_type = self._resolve_db_path_type(
             db_path, motherduck_token, saas_mode
         )
@@ -180,11 +184,44 @@ class DatabaseClient:
         else:
             q = self.conn.execute(query)
 
+        # Fetch up to max_rows rows from the result set
+        rows = q.fetchmany(self._max_rows)
+        
+        # Check if there are more rows available
+        has_more_rows = False
+        try:
+            peek = q.fetchone()
+            if peek is not None:
+                has_more_rows = True
+        except:
+            pass  # No more rows available
+        
+        returned_rows = len(rows)
+        
+        # Format results as table
         out = tabulate(
-            q.fetchall(),
+            rows,
             headers=[d[0] + "\n" + str(d[1]) for d in q.description],
             tablefmt="pretty",
         )
+        
+        # Apply character limit if output is too long
+        char_truncated = False
+        if len(out) > self._max_chars:
+            out = out[:self._max_chars]
+            char_truncated = True
+        
+        # Build informative feedback message
+        notices = []
+        
+        if has_more_rows:
+            notices.append(f"Showing first {returned_rows} rows. Use LIMIT clause to control result size.")
+        
+        if char_truncated:
+            notices.append(f"Output truncated at {self._max_chars:,} characters.")
+        
+        if notices:
+            out += "\n\n⚠️  " + " ".join(notices)
 
         if self.conn is None:
             conn.close()

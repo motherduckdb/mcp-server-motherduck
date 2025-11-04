@@ -34,6 +34,11 @@ The server offers one tool:
 
 All interactions with both DuckDB and MotherDuck are done through writing SQL queries.
 
+**Result Limiting**: Query results are automatically limited to prevent using up too much context:
+- Maximum 1024 rows by default (configurable with `--max-rows`)
+- Maximum 50,000 characters by default (configurable with `--max-chars`)
+- Truncated responses include a note about truncation
+
 ## Command Line Parameters
 
 The MCP server supports the following parameters:
@@ -48,21 +53,26 @@ The MCP server supports the following parameters:
 | `--home-dir` | String | `None` | Home directory for DuckDB (uses `HOME` env var by default)                                                                                                                                                                                                     |
 | `--saas-mode` | Flag | `False` | Flag for connecting to MotherDuck in [SaaS mode](https://motherduck.com/docs/key-tasks/authenticating-and-connecting-to-motherduck/authenticating-to-motherduck/#authentication-using-saas-mode). (disables filesystem and write permissions for local DuckDB) |
 | `--json-response` | Flag | `False` | Enable JSON responses for HTTP stream. Only supported for `stream` transport                                                                                                                                                                                   |
+| `--max-rows` | Integer | `1024` | Maximum number of rows to return from queries.                                                                                                                                                                    |
+| `--max-chars` | Integer | `50000` | Maximum number of characters in query results.                                                                                                                                                          |
 
 ### Quick Usage Examples
 
 ```bash
-# Connect to local DuckDB file in read-only mode with stream transport mode
-uvx mcp-server-motherduck --transport stream --db-path /path/to/local.db --read-only
+# Connect to local DuckDB file in read-only mode
+uvx mcp-server-motherduck --db-path /path/to/local.db --read-only
 
-# Connect to MotherDuck with token with stream transport mode
-uvx mcp-server-motherduck --transport stream --db-path md: --motherduck-token YOUR_TOKEN
+# Connect to MotherDuck with token
+uvx mcp-server-motherduck --db-path md: --motherduck-token YOUR_TOKEN
 
-# Connect to local DuckDB file in read-only mode with stream transport mode
-uvx mcp-server-motherduck --transport stream --db-path /path/to/local.db --read-only
+# Connect to local DuckDB file in read-only mode
+uvx mcp-server-motherduck --db-path /path/to/local.db --read-only
 
 # Connect to MotherDuck in SaaS mode for enhanced security with stream transport mode
 uvx mcp-server-motherduck --transport stream --db-path md: --motherduck-token YOUR_TOKEN --saas-mode
+
+# Customize result truncation limits
+uvx mcp-server-motherduck --db-path md: --motherduck-token YOUR_TOKEN --max-rows 2048 --max-chars 100000
 ```
 
 ## Getting Started

@@ -51,6 +51,18 @@ logging.basicConfig(
     default=False,
     help="(Default: `False`) Enable JSON responses instead of SSE streams. Only supported for `stream` transport.",
 )
+@click.option(
+    "--max-rows",
+    type=int,
+    default=1024,
+    help="(Default: `1024`) Maximum number of rows to return from queries. Use LIMIT in your SQL for specific row counts.",
+)
+@click.option(
+    "--max-chars",
+    type=int,
+    default=50000,
+    help="(Default: `50000`) Maximum number of characters in query results. Prevents issues with wide rows or large text columns.",
+)
 def main(
     port,
     transport,
@@ -60,11 +72,14 @@ def main(
     saas_mode,
     read_only,
     json_response,
+    max_rows,
+    max_chars,
 ):
     """Main entry point for the package."""
 
     logger.info("🦆 MotherDuck MCP Server v" + SERVER_VERSION)
     logger.info("Ready to execute SQL queries via DuckDB/MotherDuck")
+    logger.info(f"Query result limits: {max_rows} rows, {max_chars:,} characters")
 
     app, init_opts = build_application(
         db_path=db_path,
@@ -72,6 +87,8 @@ def main(
         home_dir=home_dir,
         saas_mode=saas_mode,
         read_only=read_only,
+        max_rows=max_rows,
+        max_chars=max_chars,
     )
 
     if transport == "sse":
@@ -176,10 +193,44 @@ def main(
         logger.info("Waiting for client connection")
 
         async def arun():
-            async with stdio_server() as (read_stream, write_stream):
-                await app.run(read_stream, write_stream, init_opts)
+            try:
+                async with stdio_server() as (read_stream, write_stream):
+                    await app.run(read_stream, write_stream, init_opts)
+            except* BrokenPipeError as e:
+                # Client disconnected unexpectedly - this is normal when client closes
+                logger.info("Client disconnected (broken pipe)")
+            except* ConnectionResetError as e:
+                # Connection was reset by the client
+                logger.info("Client connection was reset")
+            except* anyio.BrokenResourceError as e:
+                # AnyIO's wrapper for broken pipe errors
+                logger.info("Client disconnected (broken resource)")
 
-        anyio.run(arun)
+        try:
+            anyio.run(arun)
+        except* BrokenPipeError as e:
+            # Catch any pipe errors wrapped in ExceptionGroup at top level
+            logger.info("Client disconnected unexpectedly (broken pipe)")
+        except* ConnectionResetError as e:
+            # Catch connection reset wrapped in ExceptionGroup at top level
+            logger.info("Client disconnected unexpectedly (connection reset)")
+        except (BrokenPipeError, ConnectionResetError) as e:
+            # Catch any unwrapped pipe errors that escape to the top level
+            logger.info("Client disconnected unexpectedly")
+        except ExceptionGroup as e:
+            # Last resort: catch any ExceptionGroup that contains connection errors
+            has_pipe_error = any(
+                isinstance(exc, (BrokenPipeError, ConnectionResetError))
+                for exc in e.exceptions
+            )
+            if has_pipe_error:
+                logger.info("Client disconnected unexpectedly (exception group)")
+            else:
+                # Re-raise if it's not a connection error
+                raise
+        except KeyboardInterrupt:
+            logger.info("Server interrupted by user")
+        
         # This will only be reached when the server is shutting down
         logger.info(
             "🦆 MotherDuck MCP Server in \033[32mstdio\033[0m mode shutting down"
