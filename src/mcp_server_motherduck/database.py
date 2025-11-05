@@ -188,14 +188,7 @@ class DatabaseClient:
         rows = q.fetchmany(self._max_rows)
         
         # Check if there are more rows available
-        has_more_rows = False
-        try:
-            peek = q.fetchone()
-            if peek is not None:
-                has_more_rows = True
-        except:
-            pass  # No more rows available
-        
+        has_more_rows = q.fetchone() is not None
         returned_rows = len(rows)
         
         # Format results as table
@@ -206,22 +199,16 @@ class DatabaseClient:
         )
         
         # Apply character limit if output is too long
-        char_truncated = False
-        if len(out) > self._max_chars:
+        char_truncated = len(out) > self._max_chars
+        if char_truncated:
             out = out[:self._max_chars]
-            char_truncated = True
         
-        # Build informative feedback message
-        notices = []
-        
+        # Add informative feedback messages
         if has_more_rows:
-            notices.append(f"Showing first {returned_rows} rows. Use LIMIT clause to control result size.")
+            out += f"\n\n⚠️  Showing first {returned_rows} rows. Use LIMIT clause to control result size."
         
         if char_truncated:
-            notices.append(f"Output truncated at {self._max_chars:,} characters.")
-        
-        if notices:
-            out += "\n\n⚠️  " + " ".join(notices)
+            out += f"\n\n⚠️  Output truncated at {self._max_chars:,} characters."
 
         if self.conn is None:
             conn.close()
