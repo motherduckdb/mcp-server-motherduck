@@ -210,7 +210,7 @@ class DatabaseClient:
         if has_more_rows:
             out += f"\n\n⚠️  Showing first {returned_rows} rows."
         elif char_truncated:
-            out += f"\n\n⚠️  Output truncated at {self._max_chars:,} characters. Use LIMIT clause to control result size."
+            out += f"\n\n⚠️  Output truncated at {self._max_chars:,} characters."
 
         return out
     
