@@ -20,6 +20,7 @@ def build_application(
     read_only: bool = False,
     max_rows: int = 1024,
     max_chars: int = 50000,
+    query_timeout: int = -1,
 ):
     logger.info("Starting MotherDuck MCP Server")
     server = Server("mcp-server-motherduck")
@@ -31,6 +32,7 @@ def build_application(
         read_only=read_only,
         max_rows=max_rows,
         max_chars=max_chars,
+        query_timeout=query_timeout,
     )
 
     logger.info("Registering handlers")

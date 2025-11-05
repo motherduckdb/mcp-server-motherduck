@@ -63,6 +63,12 @@ logging.basicConfig(
     default=50000,
     help="(Default: `50000`) Maximum number of characters in query results. Prevents issues with wide rows or large text columns.",
 )
+@click.option(
+    "--query-timeout",
+    type=int,
+    default=-1,
+    help="(Default: `-1`) Query execution timeout in seconds. Set to -1 to disable timeout.",
+)
 def main(
     port,
     transport,
@@ -74,12 +80,17 @@ def main(
     json_response,
     max_rows,
     max_chars,
+    query_timeout,
 ):
     """Main entry point for the package."""
 
     logger.info("🦆 MotherDuck MCP Server v" + SERVER_VERSION)
     logger.info("Ready to execute SQL queries via DuckDB/MotherDuck")
     logger.info(f"Query result limits: {max_rows} rows, {max_chars:,} characters")
+    if query_timeout == -1:
+        logger.info("Query timeout: disabled")
+    else:
+        logger.info(f"Query timeout: {query_timeout}s")
 
     app, init_opts = build_application(
         db_path=db_path,
@@ -89,6 +100,7 @@ def main(
         read_only=read_only,
         max_rows=max_rows,
         max_chars=max_chars,
+        query_timeout=query_timeout,
     )
 
     if transport == "sse":
@@ -198,10 +210,20 @@ def main(
 
         try:
             anyio.run(arun)
-        except* (BrokenPipeError, ConnectionResetError, anyio.BrokenResourceError):
+        except (BrokenPipeError, ConnectionResetError, anyio.BrokenResourceError):
             logger.info("Client disconnected")
         except KeyboardInterrupt:
             logger.info("Server interrupted by user")
+        except BaseException as e:
+            # Handle exception groups from anyio (Python 3.11+)
+            if type(e).__name__ == 'ExceptionGroup':
+                if any(isinstance(exc, (BrokenPipeError, ConnectionResetError, anyio.BrokenResourceError)) 
+                       for exc in getattr(e, 'exceptions', [])):
+                    logger.info("Client disconnected")
+                else:
+                    raise
+            else:
+                raise
         
         # This will only be reached when the server is shutting down
         logger.info(

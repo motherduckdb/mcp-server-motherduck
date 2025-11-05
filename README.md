@@ -55,6 +55,7 @@ The MCP server supports the following parameters:
 | `--json-response` | Flag | `False` | Enable JSON responses for HTTP stream. Only supported for `stream` transport                                                                                                                                                                                   |
 | `--max-rows` | Integer | `1024` | Maximum number of rows to return from queries.                                                                                                                                                                    |
 | `--max-chars` | Integer | `50000` | Maximum number of characters in query results.                                                                                                                                                          |
+| `--query-timeout` | Integer | `-1` | Query execution timeout in seconds. Set to -1 to disable timeout (default).                                                                                                                                                          |
 
 ### Quick Usage Examples
 
@@ -73,6 +74,9 @@ uvx mcp-server-motherduck --transport stream --db-path md: --motherduck-token YO
 
 # Customize result truncation limits
 uvx mcp-server-motherduck --db-path md: --motherduck-token YOUR_TOKEN --max-rows 2048 --max-chars 100000
+
+# Enable query timeout (5 minutes)
+uvx mcp-server-motherduck --db-path md: --motherduck-token YOUR_TOKEN --query-timeout 300
 ```
 
 ## Getting Started
