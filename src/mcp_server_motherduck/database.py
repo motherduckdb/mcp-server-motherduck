@@ -203,12 +203,11 @@ class DatabaseClient:
         if char_truncated:
             out = out[:self._max_chars]
         
-        # Add informative feedback messages
+        # Add informative feedback message
         if has_more_rows:
-            out += f"\n\n⚠️  Showing first {returned_rows} rows. Use LIMIT clause to control result size."
-        
-        if char_truncated:
-            out += f"\n\n⚠️  Output truncated at {self._max_chars:,} characters."
+            out += f"\n\n⚠️  Showing first {returned_rows} rows."
+        elif char_truncated:
+            out += f"\n\n⚠️  Output truncated at {self._max_chars:,} characters. Use LIMIT clause to control result size."
 
         if self.conn is None:
             conn.close()
