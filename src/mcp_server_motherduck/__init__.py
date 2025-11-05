@@ -198,11 +198,21 @@ def main(
 
         try:
             anyio.run(arun)
-        except* (BrokenPipeError, ConnectionResetError, anyio.BrokenResourceError):
+        except (BrokenPipeError, ConnectionResetError, anyio.BrokenResourceError):
             logger.info("Client disconnected")
         except KeyboardInterrupt:
             logger.info("Server interrupted by user")
-        
+        except BaseException as e:
+            # Handle exception groups from anyio (Python 3.11+)
+            if type(e).__name__ == 'ExceptionGroup':
+                if any(isinstance(exc, (BrokenPipeError, ConnectionResetError, anyio.BrokenResourceError)) 
+                       for exc in getattr(e, 'exceptions', [])):
+                    logger.info("Client disconnected")
+                else:
+                    raise
+            else:
+                raise
+                
         # This will only be reached when the server is shutting down
         logger.info(
             "🦆 MotherDuck MCP Server in \033[32mstdio\033[0m mode shutting down"
