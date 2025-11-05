@@ -193,41 +193,13 @@ def main(
         logger.info("Waiting for client connection")
 
         async def arun():
-            try:
-                async with stdio_server() as (read_stream, write_stream):
-                    await app.run(read_stream, write_stream, init_opts)
-            except* BrokenPipeError as e:
-                # Client disconnected unexpectedly - this is normal when client closes
-                logger.info("Client disconnected (broken pipe)")
-            except* ConnectionResetError as e:
-                # Connection was reset by the client
-                logger.info("Client connection was reset")
-            except* anyio.BrokenResourceError as e:
-                # AnyIO's wrapper for broken pipe errors
-                logger.info("Client disconnected (broken resource)")
+            async with stdio_server() as (read_stream, write_stream):
+                await app.run(read_stream, write_stream, init_opts)
 
         try:
             anyio.run(arun)
-        except* BrokenPipeError as e:
-            # Catch any pipe errors wrapped in ExceptionGroup at top level
-            logger.info("Client disconnected unexpectedly (broken pipe)")
-        except* ConnectionResetError as e:
-            # Catch connection reset wrapped in ExceptionGroup at top level
-            logger.info("Client disconnected unexpectedly (connection reset)")
-        except (BrokenPipeError, ConnectionResetError) as e:
-            # Catch any unwrapped pipe errors that escape to the top level
-            logger.info("Client disconnected unexpectedly")
-        except ExceptionGroup as e:
-            # Last resort: catch any ExceptionGroup that contains connection errors
-            has_pipe_error = any(
-                isinstance(exc, (BrokenPipeError, ConnectionResetError))
-                for exc in e.exceptions
-            )
-            if has_pipe_error:
-                logger.info("Client disconnected unexpectedly (exception group)")
-            else:
-                # Re-raise if it's not a connection error
-                raise
+        except* (BrokenPipeError, ConnectionResetError, anyio.BrokenResourceError):
+            logger.info("Client disconnected")
         except KeyboardInterrupt:
             logger.info("Server interrupted by user")
         
