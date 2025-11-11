@@ -1,5 +1,5 @@
 {
-  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-09-29/server.schema.json",
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-10-17/server.schema.json",
   "name": "io.github.motherduckdb/mcp-server-motherduck",
   "description": "Fast analytics and data processing with DuckDB and MotherDuck",
   "repository": {
@@ -31,6 +31,13 @@
           "description": "Port to listen on for sse and stream transport mode",
           "default": "8000",
           "format": "number",
+          "isRequired": false
+        },
+        {
+          "type": "named",
+          "name": "--host",
+          "description": "Host to bind the MCP server for sse and stream transport mode",
+          "default": "127.0.0.1",
           "isRequired": false
         },
         {
@@ -70,6 +77,30 @@
           "name": "--json-response",
           "description": "Enable JSON responses for HTTP stream (only supported for stream transport)",
           "isRequired": false
+        },
+        {
+          "type": "named",
+          "name": "--max-rows",
+          "description": "Maximum number of rows to return from queries",
+          "default": "1024",
+          "format": "number",
+          "isRequired": false
+        },
+        {
+          "type": "named",
+          "name": "--max-chars",
+          "description": "Maximum number of characters in query results",
+          "default": "50000",
+          "format": "number",
+          "isRequired": false
+        },
+        {
+          "type": "named",
+          "name": "--query-timeout",
+          "description": "Query execution timeout in seconds. Set to -1 to disable timeout",
+          "default": "-1",
+          "format": "number",
+          "isRequired": false
         }
       ],
       "environmentVariables": [
@@ -82,6 +113,29 @@
         {
           "name": "HOME",
           "description": "Home directory for DuckDB (used as default if --home-dir not specified)",
+          "isRequired": false
+        },
+        {
+          "name": "AWS_ACCESS_KEY_ID",
+          "description": "AWS access key for S3 database connections",
+          "isRequired": false,
+          "isSecret": true
+        },
+        {
+          "name": "AWS_SECRET_ACCESS_KEY",
+          "description": "AWS secret access key for S3 database connections",
+          "isRequired": false,
+          "isSecret": true
+        },
+        {
+          "name": "AWS_SESSION_TOKEN",
+          "description": "AWS session token for temporary credentials (IAM roles, AWS SSO, EC2 instance profiles)",
+          "isRequired": false,
+          "isSecret": true
+        },
+        {
+          "name": "AWS_DEFAULT_REGION",
+          "description": "AWS region for S3 database connections",
           "isRequired": false
         }
       ]
