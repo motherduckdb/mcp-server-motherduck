@@ -52,6 +52,18 @@ logging.basicConfig(
     default=False,
     help="(Default: `False`) Enable JSON responses instead of SSE streams. Only supported for `stream` transport.",
 )
+@click.option(
+    "--max-rows",
+    type=int,
+    default=1024,
+    help="(Default: `1024`) Maximum number of rows to return from queries. Use LIMIT in your SQL for specific row counts.",
+)
+@click.option(
+    "--max-chars",
+    type=int,
+    default=50000,
+    help="(Default: `50000`) Maximum number of characters in query results. Prevents issues with wide rows or large text columns.",
+)
 def main(
     port,
     host,
@@ -62,11 +74,14 @@ def main(
     saas_mode,
     read_only,
     json_response,
+    max_rows,
+    max_chars,
 ):
     """Main entry point for the package."""
 
     logger.info("🦆 MotherDuck MCP Server v" + SERVER_VERSION)
     logger.info("Ready to execute SQL queries via DuckDB/MotherDuck")
+    logger.info(f"Query result limits: {max_rows} rows, {max_chars:,} characters")
 
     app, init_opts = build_application(
         db_path=db_path,
@@ -74,6 +89,8 @@ def main(
         home_dir=home_dir,
         saas_mode=saas_mode,
         read_only=read_only,
+        max_rows=max_rows,
+        max_chars=max_chars,
     )
 
     if transport == "sse":
@@ -181,7 +198,23 @@ def main(
             async with stdio_server() as (read_stream, write_stream):
                 await app.run(read_stream, write_stream, init_opts)
 
-        anyio.run(arun)
+        try:
+            anyio.run(arun)
+        except (BrokenPipeError, ConnectionResetError, anyio.BrokenResourceError):
+            logger.info("Client disconnected")
+        except KeyboardInterrupt:
+            logger.info("Server interrupted by user")
+        except BaseException as e:
+            # Handle exception groups from anyio (Python 3.11+)
+            if type(e).__name__ == 'ExceptionGroup':
+                if any(isinstance(exc, (BrokenPipeError, ConnectionResetError, anyio.BrokenResourceError)) 
+                       for exc in getattr(e, 'exceptions', [])):
+                    logger.info("Client disconnected")
+                else:
+                    raise
+            else:
+                raise
+                
         # This will only be reached when the server is shutting down
         logger.info(
             "🦆 MotherDuck MCP Server in \033[32mstdio\033[0m mode shutting down"

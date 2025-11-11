@@ -18,6 +18,8 @@ def build_application(
     home_dir: str | None = None,
     saas_mode: bool = False,
     read_only: bool = False,
+    max_rows: int = 1024,
+    max_chars: int = 50000,
 ):
     logger.info("Starting MotherDuck MCP Server")
     server = Server("mcp-server-motherduck")
@@ -27,6 +29,8 @@ def build_application(
         home_dir=home_dir,
         saas_mode=saas_mode,
         read_only=read_only,
+        max_rows=max_rows,
+        max_chars=max_chars,
     )
 
     logger.info("Registering handlers")
