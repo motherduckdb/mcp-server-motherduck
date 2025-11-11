@@ -379,6 +379,7 @@ You can connect to DuckDB databases stored on Amazon S3 by providing an S3 URL a
 
 **Note**: For S3 connections:
 - AWS credentials must be provided via environment variables (`AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, and optionally `AWS_DEFAULT_REGION`)
+- For temporary credentials (AWS SSO), set the `AWS_SESSION_TOKEN` environment variable (and optionally `AWS_DEFAULT_REGION`) to automatically use DuckDB's `credential_chain` provider.
 - The S3 database is attached to an in-memory DuckDB instance
 - The httpfs extension is automatically installed and configured for S3 access
 - Both read and write operations are supported
