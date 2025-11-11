@@ -3,6 +3,7 @@ import duckdb
 from typing import Literal, Optional
 from tabulate import tabulate
 import logging
+import threading
 from .configs import SERVER_VERSION
 
 logger = logging.getLogger("mcp_server_motherduck")
@@ -18,10 +19,12 @@ class DatabaseClient:
         read_only: bool = False,
         max_rows: int = 1024,
         max_chars: int = 50000,
+        query_timeout: int = -1,
     ):
         self._read_only = read_only
         self._max_rows = max_rows
         self._max_chars = max_chars
+        self._query_timeout = query_timeout
         self.db_path, self.db_type = self._resolve_db_path_type(
             db_path, motherduck_token, saas_mode
         )
@@ -182,30 +185,30 @@ class DatabaseClient:
         return db_path, "duckdb"
 
     def _execute(self, query: str) -> str:
+        # Get connection to use
         if self.conn is None:
-            # open short lived readonly connection for local DuckDB, run query, close connection, return result
             conn = duckdb.connect(
                 self.db_path,
                 config={"custom_user_agent": f"mcp-server-motherduck/{SERVER_VERSION}"},
                 read_only=self._read_only,
             )
-            q = conn.execute(query)
         else:
-            q = self.conn.execute(query)
-
-        # Fetch up to max_rows rows from the result set
-        rows = q.fetchmany(self._max_rows)
+            conn = self.conn
         
-        # Check if there are more rows available
-        has_more_rows = q.fetchone() is not None
+        # Execute with or without timeout
+        if self._query_timeout > 0:
+            rows, has_more_rows, headers = self._execute_with_timeout(conn, query)
+        else:
+            rows, has_more_rows, headers = self._execute_direct(conn, query)
+        
+        # Close connection if it was temporary
+        if self.conn is None:
+            conn.close()
+        
         returned_rows = len(rows)
         
         # Format results as table
-        out = tabulate(
-            rows,
-            headers=[d[0] + "\n" + str(d[1]) for d in q.description],
-            tablefmt="pretty",
-        )
+        out = tabulate(rows, headers=headers, tablefmt="pretty")
         
         # Apply character limit if output is too long
         char_truncated = len(out) > self._max_chars
@@ -218,10 +221,34 @@ class DatabaseClient:
         elif char_truncated:
             out += f"\n\n⚠️  Output truncated at {self._max_chars:,} characters."
 
-        if self.conn is None:
-            conn.close()
-
         return out
+    
+    def _execute_direct(self, conn, query: str) -> tuple:
+        """Execute query without timeout - original code path"""
+        q = conn.execute(query)
+        rows = q.fetchmany(self._max_rows)
+        has_more_rows = q.fetchone() is not None
+        headers = [d[0] + "\n" + str(d[1]) for d in q.description]
+        return rows, has_more_rows, headers
+    
+    def _execute_with_timeout(self, conn, query: str) -> tuple:
+        """Execute query with timeout using threading.Timer and conn.interrupt()"""
+        timer = threading.Timer(self._query_timeout, conn.interrupt)
+        timer.start()
+        
+        try:
+            q = conn.execute(query)
+            rows = q.fetchmany(self._max_rows)
+            has_more_rows = q.fetchone() is not None
+            headers = [d[0] + "\n" + str(d[1]) for d in q.description]
+            return rows, has_more_rows, headers
+        except duckdb.InterruptException:
+            raise ValueError(
+                f"Query execution timed out after {self._query_timeout} seconds. "
+                f"Increase timeout with --query-timeout argument when starting the mcp server."
+            )
+        finally:
+            timer.cancel()
 
     def query(self, query: str) -> str:
         try:
