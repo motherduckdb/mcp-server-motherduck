@@ -20,11 +20,13 @@ class DatabaseClient:
         max_rows: int = 1024,
         max_chars: int = 50000,
         query_timeout: int = -1,
+        init_sql: str | None = None,
     ):
         self._read_only = read_only
         self._max_rows = max_rows
         self._max_chars = max_chars
         self._query_timeout = query_timeout
+        self._init_sql = init_sql
         self.db_path, self.db_type = self._resolve_db_path_type(
             db_path, motherduck_token, saas_mode
         )
@@ -131,6 +133,8 @@ class DatabaseClient:
                 else:
                     raise
                 
+            # Execute init SQL if provided
+            self._execute_init_sql(conn)
             return conn
 
         conn = duckdb.connect(
@@ -141,7 +145,33 @@ class DatabaseClient:
 
         logger.info(f"✅ Successfully connected to {self.db_type} database")
 
+        # Execute init SQL if provided
+        self._execute_init_sql(conn)
         return conn
+
+    def _execute_init_sql(self, conn: duckdb.DuckDBPyConnection) -> None:
+        """Execute initialization SQL if provided"""
+        if not self._init_sql:
+            return
+        
+        try:
+            # Check if init_sql is a file path
+            if os.path.isfile(self._init_sql):
+                logger.info(f"📄 Loading init SQL from file: {self._init_sql}")
+                with open(self._init_sql, 'r') as f:
+                    sql_content = f.read()
+            else:
+                # Treat as raw SQL string
+                logger.info("📝 Executing init SQL string")
+                sql_content = self._init_sql
+            
+            # Execute the SQL
+            conn.execute(sql_content)
+            logger.info("✅ Init SQL executed successfully")
+            
+        except Exception as e:
+            logger.error(f"❌ Failed to execute init SQL: {e}")
+            raise ValueError(f"Init SQL execution failed: {e}")
 
     def _resolve_db_path_type(
         self, db_path: str, motherduck_token: str | None = None, saas_mode: bool = False

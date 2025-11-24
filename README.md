@@ -57,6 +57,7 @@ The MCP server supports the following parameters:
 | `--max-rows` | Integer | `1024` | Maximum number of rows to return from queries.                                                                                                                                                                    |
 | `--max-chars` | Integer | `50000` | Maximum number of characters in query results.                                                                                                                                                          |
 | `--query-timeout` | Integer | `-1` | Query execution timeout in seconds. Set to -1 to disable timeout (default).                                                                                                                                                          |
+| `--init-sql` | String | `None` | SQL file path or SQL string to execute on startup for database initialization |
 
 ### Quick Usage Examples
 
@@ -78,6 +79,40 @@ uvx mcp-server-motherduck --db-path md: --motherduck-token YOUR_TOKEN --max-rows
 
 # Enable query timeout (5 minutes)
 uvx mcp-server-motherduck --db-path md: --motherduck-token YOUR_TOKEN --query-timeout 300
+
+# Initialize database with SQL file
+uvx mcp-server-motherduck --db-path md: --motherduck-token YOUR_TOKEN --init-sql /path/to/init.sql
+
+# Initialize database with inline SQL
+uvx mcp-server-motherduck --db-path :memory: --init-sql "CREATE TABLE test (id INTEGER, name VARCHAR); INSERT INTO test VALUES (1, 'hello'), (2, 'world');"
+```
+
+### Database Initialization with --init-sql
+
+The `--init-sql` parameter allows you to execute SQL commands automatically when the server starts. This is useful for:
+
+- Setting up database schemas and tables
+- Loading initial data
+- Configuring database settings
+- Creating views or functions
+
+You can provide either:
+1. **A file path** to a `.sql` file containing your initialization SQL
+2. **A raw SQL string** with your initialization commands
+
+**Examples:**
+
+Using a SQL file:
+```bash
+uvx mcp-server-motherduck --db-path :memory: --init-sql /path/to/schema.sql
+```
+
+Using inline SQL:
+```bash
+uvx mcp-server-motherduck --db-path :memory: --init-sql "CREATE TABLE users (id INTEGER PRIMARY KEY, name VARCHAR(100)); CREATE TABLE orders (id INTEGER PRIMARY KEY, user_id INTEGER, total DECIMAL(10,2));"
+```
+
+The initialization SQL is executed after the database connection is established but before the server starts accepting queries.
 ```
 
 ## Getting Started
@@ -191,6 +226,34 @@ Optionally, you can add it to a file called `.vscode/mcp.json` in your workspace
 }
 ```
 
+**Example with database initialization**:
+```json
+{
+  "inputs": [
+    {
+      "type": "promptString",
+      "id": "motherduck_token",
+      "description": "MotherDuck Token",
+      "password": true
+    }
+  ],
+  "servers": {
+    "motherduck": {
+      "command": "uvx",
+      "args": [
+        "mcp-server-motherduck",
+        "--db-path",
+        "md:",
+        "--motherduck-token",
+        "${input:motherduck_token}",
+        "--init-sql",
+        "CREATE TABLE analytics (id INTEGER PRIMARY KEY, event_name VARCHAR(100), timestamp TIMESTAMP);"
+      ]
+    }
+  }
+}
+```
+
 ### Usage with Claude Desktop
 
 1. Install Claude Desktop from [claude.ai/download](https://claude.ai/download) if you haven't already
@@ -220,6 +283,26 @@ Optionally, you can add it to a file called `.vscode/mcp.json` in your workspace
 **Important Notes**:
 
 - Replace `YOUR_MOTHERDUCK_TOKEN_HERE` with your actual MotherDuck token
+
+**Example with database initialization**:
+```json
+{
+  "mcpServers": {
+    "mcp-server-motherduck": {
+      "command": "uvx",
+      "args": [
+        "mcp-server-motherduck",
+        "--db-path",
+        "md:",
+        "--motherduck-token",
+        "<YOUR_MOTHERDUCK_TOKEN_HERE>",
+        "--init-sql",
+        "CREATE TABLE analytics (id INTEGER PRIMARY KEY, event_name VARCHAR(100), timestamp TIMESTAMP);"
+      ]
+    }
+  }
+}
+```
 
 ### Usage with Claude Code
 

@@ -70,6 +70,11 @@ logging.basicConfig(
     default=-1,
     help="(Default: `-1`) Query execution timeout in seconds. Set to -1 to disable timeout.",
 )
+@click.option(
+    "--init-sql",
+    default=None,
+    help="(Default: `None`) SQL file path or SQL string to execute on startup for database initialization",
+)
 def main(
     port,
     host,
@@ -83,6 +88,7 @@ def main(
     max_rows,
     max_chars,
     query_timeout,
+    init_sql,
 ):
     """Main entry point for the package."""
 
@@ -103,6 +109,7 @@ def main(
         max_rows=max_rows,
         max_chars=max_chars,
         query_timeout=query_timeout,
+        init_sql=init_sql,
     )
 
     if transport == "sse":
