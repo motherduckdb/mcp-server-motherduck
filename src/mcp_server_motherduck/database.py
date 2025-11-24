@@ -21,12 +21,14 @@ class DatabaseClient:
         max_chars: int = 50000,
         query_timeout: int = -1,
         init_sql: str | None = None,
+        extension_dir: str | None = None,
     ):
         self._read_only = read_only
         self._max_rows = max_rows
         self._max_chars = max_chars
         self._query_timeout = query_timeout
         self._init_sql = init_sql
+        self._extension_dir = extension_dir
         self.db_path, self.db_type = self._resolve_db_path_type(
             db_path, motherduck_token, saas_mode
         )
@@ -53,7 +55,8 @@ class DatabaseClient:
                 conn = duckdb.connect(
                     self.db_path,
                     config={
-                        "custom_user_agent": f"mcp-server-motherduck/{SERVER_VERSION}"
+                        "custom_user_agent": f"mcp-server-motherduck/{SERVER_VERSION}",
+                        "extension_directory": self._extension_dir
                     },
                     read_only=self._read_only,
                 )
@@ -67,7 +70,7 @@ class DatabaseClient:
         # Check if this is an S3 path
         if self.db_type == "s3":
             # For S3, we need to create an in-memory connection and attach the S3 database
-            conn = duckdb.connect(':memory:')
+            conn = duckdb.connect(':memory:', config={"extension_directory": self._extension_dir})
             
             # Install and load the httpfs extension for S3 support
             import io
@@ -139,7 +142,9 @@ class DatabaseClient:
 
         conn = duckdb.connect(
             self.db_path,
-            config={"custom_user_agent": f"mcp-server-motherduck/{SERVER_VERSION}"},
+            config={
+                "custom_user_agent": f"mcp-server-motherduck/{SERVER_VERSION}", 
+                "extension_directory": self._extension_dir},
             read_only=self._read_only,
         )
 
@@ -219,7 +224,9 @@ class DatabaseClient:
         if self.conn is None:
             conn = duckdb.connect(
                 self.db_path,
-                config={"custom_user_agent": f"mcp-server-motherduck/{SERVER_VERSION}"},
+                config={
+                    "custom_user_agent": f"mcp-server-motherduck/{SERVER_VERSION}",
+                    "extension_directory": self._extension_dir},
                 read_only=self._read_only,
             )
         else:

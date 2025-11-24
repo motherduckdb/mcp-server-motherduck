@@ -75,6 +75,11 @@ logging.basicConfig(
     default=None,
     help="(Default: `None`) SQL file path or SQL string to execute on startup for database initialization",
 )
+@click.option(
+    "--extension-dir",
+    default=".extensions",
+    help="(Default: `.extensions`) Directory for DuckDB extensions",
+)
 def main(
     port,
     host,
@@ -89,6 +94,7 @@ def main(
     max_chars,
     query_timeout,
     init_sql,
+    extension_dir,
 ):
     """Main entry point for the package."""
 
@@ -110,6 +116,7 @@ def main(
         max_chars=max_chars,
         query_timeout=query_timeout,
         init_sql=init_sql,
+        extension_dir=extension_dir,
     )
 
     if transport == "sse":

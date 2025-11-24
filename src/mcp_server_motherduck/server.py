@@ -22,6 +22,7 @@ def build_application(
     max_chars: int = 50000,
     query_timeout: int = -1,
     init_sql: str | None = None,
+    extension_dir: str | None = None,
 ):
     logger.info("Starting MotherDuck MCP Server")
     server = Server("mcp-server-motherduck")
@@ -35,6 +36,7 @@ def build_application(
         max_chars=max_chars,
         query_timeout=query_timeout,
         init_sql=init_sql,
+        extension_dir=extension_dir,
     )
 
     logger.info("Registering handlers")
