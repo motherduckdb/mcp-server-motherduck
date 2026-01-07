@@ -1,6 +1,9 @@
 # MotherDuck's DuckDB MCP Server
 
-An MCP server implementation that interacts with DuckDB and MotherDuck databases, providing SQL analytics capabilities to AI Assistants and IDEs.
+A local MCP server implementation that interacts with DuckDB and MotherDuck databases, providing SQL analytics capabilities to AI Assistants and IDEs.
+
+> This repository contains the **self-hosted/local** MCP server implementation.
+> If you're looking for MotherDuck's **hosted/remote MCP** option, see the [MotherDuck MCP docs](https://motherduck.com/docs/sql-reference/mcp/).
 
 [<img src="https://cursor.com/deeplink/mcp-install-dark.svg" alt="Install in Cursor">](https://cursor.com/en/install-mcp?name=DuckDB&config=eyJjb21tYW5kIjoidXZ4IG1jcC1zZXJ2ZXItbW90aGVyZHVjayAtLWRiLXBhdGggOm1lbW9yeToiLCJlbnYiOnsibW90aGVyZHVja190b2tlbiI6IiJ9fQ%3D%3D)
 
