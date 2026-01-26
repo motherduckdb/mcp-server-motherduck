@@ -448,9 +448,9 @@ To run the server from a local development environment, use the following config
 
 This repo uses a GitHub Actions workflow to bump, tag, publish, and create a release.
 
-1. Open GitHub Actions → "Release New Version".
-2. Enter the new version in `MAJOR.MINOR.PATCH` format (for example: `0.8.1`).
-3. Run the workflow.
+1. Use the Github action `Release New Version`
+2. Enter the new version in `MAJOR.MINOR.PATCH` format (for example: `0.8.1`)
+3. Run the workflow
 
 The workflow will update all versioned files, commit and tag `vX.Y.Z`, publish to PyPI and the MCP registry, then create the GitHub release.
 
