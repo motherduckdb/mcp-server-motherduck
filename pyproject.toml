@@ -1,6 +1,6 @@
 [project]
 name = "mcp-server-motherduck"
-version = "0.8.0"
+version = "0.8.1"
 description = "A MCP server for MotherDuck and local DuckDB"
 readme = "README.md"
 requires-python = ">=3.10"
