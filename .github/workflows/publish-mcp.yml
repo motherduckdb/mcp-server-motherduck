@@ -3,9 +3,6 @@ name: Publish to PyPI and MCP Registry
 on:
   workflow_dispatch:  # Allows manual triggering from GitHub Actions UI
   workflow_call:  # Allows triggering from other workflows
-  push:
-    tags:
-      - 'v*'  # Trigger on version tags like v0.7.0
 
 jobs:
   publish:
