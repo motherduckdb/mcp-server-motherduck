@@ -3,6 +3,7 @@
 # Custom
 .python-version
 .mcpregistry_*
+tests/e2e/fixtures/*.duckdb
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

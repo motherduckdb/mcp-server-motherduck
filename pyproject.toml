@@ -19,12 +19,28 @@ dependencies = [
 name = "tdoehmen"
 email = "till@motherduck.com"
 
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-asyncio>=0.24",
+    "fastmcp>=2.14",
+    "python-dotenv>=1.0",
+]
+
 [build-system]
 requires = [ "hatchling",]
 build-backend = "hatchling.build"
 
 [project.scripts]
 mcp-server-motherduck = "mcp_server_motherduck:main"
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+testpaths = ["tests"]
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+]
 
 [tool.bumpver]
 current_version = "0.8.1"
