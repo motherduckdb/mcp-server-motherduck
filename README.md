@@ -1,9 +1,15 @@
 # MotherDuck's DuckDB MCP Server
 
+## What is the main difference between MotherDuck's remote MCP and this local MCP?
+
+If you are choosing between MotherDuck's hosted/remote MCP and this local MCP:
+
+- **Remote MCP (hosted by MotherDuck)**: read-only, zero-setup, and the recommended default for most users who just need query access. See the [MotherDuck MCP docs](https://motherduck.com/docs/sql-reference/mcp/).
+- **Local MCP (this repo)**: self-hosted and supports write access when you need to create, modify, or manage data in a controlled environment.
+
 A local MCP server implementation that interacts with DuckDB and MotherDuck databases, providing SQL analytics capabilities to AI Assistants and IDEs.
 
 > This repository contains the **self-hosted/local** MCP server implementation.
-> If you're looking for MotherDuck's **hosted/remote MCP** option, see the [MotherDuck MCP docs](https://motherduck.com/docs/sql-reference/mcp/).
 
 [<img src="https://cursor.com/deeplink/mcp-install-dark.svg" alt="Install in Cursor">](https://cursor.com/en/install-mcp?name=DuckDB&config=eyJjb21tYW5kIjoidXZ4IG1jcC1zZXJ2ZXItbW90aGVyZHVjayAtLWRiLXBhdGggOm1lbW9yeToiLCJlbnYiOnsibW90aGVyZHVja190b2tlbiI6IiJ9fQ%3D%3D)
 
