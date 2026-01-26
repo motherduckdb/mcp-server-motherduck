@@ -13,6 +13,8 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+    outputs:
+      new_version: ${{ steps.set-version.outputs.version }}
     
     steps:
       - name: Checkout code
@@ -38,28 +40,48 @@ jobs:
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Validate version input
+        run: |
+          version="${{ inputs.version }}"
+          if ! [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Version must be in MAJOR.MINOR.PATCH format (e.g., 0.8.0)."
+            exit 1
+          fi
+          git fetch --tags --force
+          if git rev-parse "v$version" >/dev/null 2>&1; then
+            echo "Tag v$version already exists."
+            exit 1
+          fi
       
       - name: Update version to ${{ inputs.version }}
+        id: set-version
         run: |
           uv tool run bumpver update --set-version ${{ inputs.version }}
           echo "NEW_VERSION=${{ inputs.version }}" >> $GITHUB_ENV
+          echo "version=${{ inputs.version }}" >> $GITHUB_OUTPUT
       
       - name: Push changes
         run: |
-          git push origin main
+          git push origin "HEAD:${{ github.event.repository.default_branch }}"
           git push origin --tags
       
-      - name: Create GitHub Release
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          gh release create "v${{ env.NEW_VERSION }}" \
-            --title "v${{ env.NEW_VERSION }}" \
-            --generate-notes
-      
-  # Publish job will be triggered automatically by the tag push
+  # Publish job runs via workflow_call
   call-publish:
     needs: bump-version
     uses: ./.github/workflows/publish-mcp.yml
     secrets: inherit
 
+  create-release:
+    needs: [bump-version, call-publish]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "v${{ needs.bump-version.outputs.new_version }}" \
+            --title "v${{ needs.bump-version.outputs.new_version }}" \
+            --generate-notes
