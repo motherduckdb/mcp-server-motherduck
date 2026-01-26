@@ -25,3 +25,17 @@ build-backend = "hatchling.build"
 
 [project.scripts]
 mcp-server-motherduck = "mcp_server_motherduck:main"
+
+[tool.bumpver]
+current_version = "0.8.1"
+version_pattern = "MAJOR.MINOR.PATCH"
+commit = false
+tag = false
+
+[tool.bumpver.file_patterns]
+"pyproject.toml" = [
+    '^version = "{version}"',
+    '^current_version = "{version}"',
+]
+"server.json" = ['"version": "{version}"']
+"src/mcp_server_motherduck/configs.py" = ['SERVER_VERSION = "{version}"']

@@ -61,6 +61,15 @@ jobs:
           echo "NEW_VERSION=${{ inputs.version }}" >> $GITHUB_ENV
           echo "version=${{ inputs.version }}" >> $GITHUB_OUTPUT
       
+      - name: Update lock file
+        run: uv lock
+      
+      - name: Commit and tag
+        run: |
+          git add -A
+          git commit -m "Bump version to ${{ inputs.version }}"
+          git tag -a "v${{ inputs.version }}" -m "v${{ inputs.version }}"
+      
       - name: Push changes
         run: |
           git push origin "HEAD:${{ github.event.repository.default_branch }}"
