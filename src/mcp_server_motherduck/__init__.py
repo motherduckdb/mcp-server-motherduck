@@ -1,9 +1,16 @@
-import anyio
+"""
+MotherDuck MCP Server - A FastMCP server for DuckDB and MotherDuck.
+
+This module provides the CLI entry point for the MCP server.
+"""
+
 import logging
 import warnings
+
 import click
-from .server import build_application
-from .configs import SERVER_VERSION, SERVER_LOCALHOST, UVICORN_LOGGING_CONFIG
+
+from .configs import SERVER_LOCALHOST, SERVER_VERSION
+from .server import create_mcp_server
 
 __version__ = SERVER_VERSION
 
@@ -43,9 +50,14 @@ logging.basicConfig(
     help="Flag for connecting to MotherDuck in SaaS mode",
 )
 @click.option(
-    "--read-only",
+    "--read-write",
     is_flag=True,
-    help="Flag for connecting to DuckDB in read-only mode. Only supported for local DuckDB databases. Also makes use of short lived connections so multiple MCP clients or other systems can remain active (though each operation must be done sequentially).",
+    help="Enable write access to the database. By default, the server runs in read-only mode for local DuckDB files and MotherDuck databases. Note: In-memory databases are always writable (DuckDB limitation).",
+)
+@click.option(
+    "--ephemeral-connections/--no-ephemeral-connections",
+    default=True,
+    help="Use temporary connections for read-only local DuckDB files, creating a new connection for each query. This keeps the file unlocked so other processes can write to it.",
 )
 @click.option(
     "--max-rows",
@@ -65,28 +77,61 @@ logging.basicConfig(
     default=-1,
     help="(Default: `-1`) Query execution timeout in seconds. Set to -1 to disable timeout.",
 )
+@click.option(
+    "--init-sql",
+    default=None,
+    help="SQL file path or SQL string to execute on startup for database initialization.",
+)
+@click.option(
+    "--allow-switch-databases",
+    is_flag=True,
+    help="Enable the switch_database_connection tool to change databases at runtime. Disabled by default.",
+)
 def main(
-    port,
-    host,
-    transport,
-    db_path,
-    motherduck_token,
-    home_dir,
-    saas_mode,
-    read_only,
-    max_rows,
-    max_chars,
-    query_timeout,
-):
-    """Main entry point for the package."""
+    port: int,
+    host: str,
+    transport: str,
+    db_path: str,
+    motherduck_token: str | None,
+    home_dir: str | None,
+    saas_mode: bool,
+    read_write: bool,
+    ephemeral_connections: bool,
+    max_rows: int,
+    max_chars: int,
+    query_timeout: int,
+    init_sql: str | None,
+    allow_switch_databases: bool,
+) -> None:
+    """MotherDuck MCP Server - Execute SQL queries via DuckDB/MotherDuck."""
+    # Convert read_write flag to read_only (inverted logic)
+    # Note: in-memory databases cannot be read-only (DuckDB limitation)
+    is_memory = db_path == ":memory:"
+    if is_memory and not read_write:
+        logger.warning(
+            "⚠️  In-memory databases cannot run in read-only mode (DuckDB limitation). "
+            "Writes will be allowed."
+        )
+    read_only = not read_write and not is_memory
 
     logger.info("🦆 MotherDuck MCP Server v" + SERVER_VERSION)
     logger.info("Ready to execute SQL queries via DuckDB/MotherDuck")
+    if is_memory:
+        logger.info("Database mode: read-write (in-memory)")
+    else:
+        mode_str = "read-write" if read_write else "read-only"
+        if not read_write and not ephemeral_connections:
+            mode_str += " (persistent connection)"
+        logger.info(f"Database mode: {mode_str}")
     logger.info(f"Query result limits: {max_rows} rows, {max_chars:,} characters")
     if query_timeout == -1:
         logger.info("Query timeout: disabled")
     else:
         logger.info(f"Query timeout: {query_timeout}s")
+    if init_sql:
+        logger.info("Init SQL: configured")
+    if allow_switch_databases:
+        logger.info("Switch databases: enabled")
 
     # Handle deprecated transport aliases
     if transport == "stream":
@@ -95,7 +140,9 @@ def main(
             DeprecationWarning,
             stacklevel=2,
         )
-        logger.warning("⚠️  '--transport stream' is deprecated. Use '--transport http' instead.")
+        logger.warning(
+            "⚠️  '--transport stream' is deprecated. Use '--transport http' instead."
+        )
         transport = "http"
     elif transport == "sse":
         warnings.warn(
@@ -103,149 +150,41 @@ def main(
             DeprecationWarning,
             stacklevel=2,
         )
-        logger.warning("⚠️  '--transport sse' is deprecated. Use '--transport http' instead.")
+        logger.warning(
+            "⚠️  '--transport sse' is deprecated. Use '--transport http' instead."
+        )
+        transport = "http"
 
-    app, init_opts = build_application(
+    # Create the FastMCP server
+    mcp = create_mcp_server(
         db_path=db_path,
         motherduck_token=motherduck_token,
         home_dir=home_dir,
         saas_mode=saas_mode,
         read_only=read_only,
+        ephemeral_connections=ephemeral_connections,
         max_rows=max_rows,
         max_chars=max_chars,
         query_timeout=query_timeout,
+        init_sql=init_sql,
+        allow_switch_databases=allow_switch_databases,
     )
 
-    if transport == "sse":
-        from mcp.server.sse import SseServerTransport
-        from starlette.applications import Starlette
-        from starlette.responses import Response
-        from starlette.routing import Mount, Route
-
-        logger.info("MCP server initialized in \033[32msse\033[0m mode (deprecated)")
-
-        sse = SseServerTransport("/messages/")
-
-        async def handle_sse(request):
-            async with sse.connect_sse(
-                request.scope, request.receive, request._send
-            ) as (read_stream, write_stream):
-                await app.run(read_stream, write_stream, init_opts)
-            return Response()
-
-        logger.info(
-            f"🦆 Connect to MotherDuck MCP Server at \033[1m\033[36mhttp://{host}:{port}/sse\033[0m"
-        )
-
-        starlette_app = Starlette(
-            debug=True,
-            routes=[
-                Route("/sse", endpoint=handle_sse, methods=["GET"]),
-                Mount("/messages/", app=sse.handle_post_message),
-            ],
-        )
-
-        import uvicorn
-
-        uvicorn.run(
-            starlette_app,
-            host=host,
-            port=port,
-            log_config=UVICORN_LOGGING_CONFIG,
-        )
-
-    elif transport == "http":
-        from mcp.server.streamable_http_manager import StreamableHTTPSessionManager
-        from collections.abc import AsyncIterator
-        from starlette.applications import Starlette
-        from starlette.routing import Mount
-        from starlette.types import Receive, Scope, Send
-        import contextlib
-
+    # Run the server with the appropriate transport
+    if transport == "http":
         logger.info("MCP server initialized in \033[32mhttp\033[0m mode")
-
-        # Create the session manager with JSON responses (always enabled)
-        session_manager = StreamableHTTPSessionManager(
-            app=app,
-            event_store=None,
-            json_response=True,
-            stateless=True,
-        )
-
-        async def handle_streamable_http(
-            scope: Scope, receive: Receive, send: Send
-        ) -> None:
-            await session_manager.handle_request(scope, receive, send)
-
-        @contextlib.asynccontextmanager
-        async def lifespan(app: Starlette) -> AsyncIterator[None]:
-            """Context manager for session manager."""
-            async with session_manager.run():
-                logger.info("MCP server started with HTTP Streamable session manager")
-                try:
-                    yield
-                finally:
-                    logger.info(
-                        "🦆 MotherDuck MCP Server in \033[32mhttp\033[0m mode shutting down"
-                    )
-
         logger.info(
             f"🦆 Connect to MotherDuck MCP Server at \033[1m\033[36mhttp://{host}:{port}/mcp\033[0m"
         )
-
-        # Create an ASGI application using the transport
-        starlette_app = Starlette(
-            debug=True,
-            routes=[
-                Mount("/mcp", app=handle_streamable_http),
-            ],
-            lifespan=lifespan,
-        )
-
-        import uvicorn
-
-        uvicorn.run(
-            starlette_app,
-            host=host,
-            port=port,
-            log_config=UVICORN_LOGGING_CONFIG,
-        )
-
+        mcp.run(transport="http", host=host, port=port)
     else:
-        from mcp.server.stdio import stdio_server
-
         logger.info("MCP server initialized in \033[32mstdio\033[0m mode")
         logger.info("Waiting for client connection")
-
-        async def arun():
-            async with stdio_server() as (read_stream, write_stream):
-                await app.run(read_stream, write_stream, init_opts)
-
-        try:
-            anyio.run(arun)
-        except (BrokenPipeError, ConnectionResetError, anyio.BrokenResourceError):
-            logger.info("Client disconnected")
-        except KeyboardInterrupt:
-            logger.info("Server interrupted by user")
-        except BaseException as e:
-            # Handle exception groups from anyio (Python 3.11+)
-            if type(e).__name__ == 'ExceptionGroup':
-                if any(isinstance(exc, (BrokenPipeError, ConnectionResetError, anyio.BrokenResourceError)) 
-                       for exc in getattr(e, 'exceptions', [])):
-                    logger.info("Client disconnected")
-                else:
-                    raise
-            else:
-                raise
-        
-        # This will only be reached when the server is shutting down
-        logger.info(
-            "🦆 MotherDuck MCP Server in \033[32mstdio\033[0m mode shutting down"
-        )
+        mcp.run(transport="stdio")
 
 
 # Optionally expose other important items at package level
-__all__ = ["main"]
+__all__ = ["main", "__version__"]
 
 if __name__ == "__main__":
     main()

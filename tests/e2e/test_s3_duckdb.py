@@ -10,7 +10,9 @@ Note: S3 databases are attached as read-only.
 """
 
 import os
+
 import pytest
+
 from tests.e2e.conftest import get_mcp_client, get_result_text
 
 
@@ -35,14 +37,14 @@ async def s3_client(s3_db_path: str):
 async def test_s3_list_tools(s3_client):
     """Server exposes the query tool when connected to S3 database."""
     tools = await s3_client.list_tools()
-    assert len(tools) == 1
+    assert len(tools) == 4  # switch_database_connection requires --allow-switch-databases
     assert tools[0].name == "query"
 
 
 @pytest.mark.asyncio
 async def test_s3_simple_select(s3_client):
     """Basic SELECT query works with S3 database."""
-    result = await s3_client.call_tool_mcp("query", {"query": "SELECT 1 as num"})
+    result = await s3_client.call_tool_mcp("query", {"sql": "SELECT 1 as num"})
     assert result.isError is False
     text = get_result_text(result)
     assert "1" in text
@@ -51,7 +53,7 @@ async def test_s3_simple_select(s3_client):
 @pytest.mark.asyncio
 async def test_s3_show_tables(s3_client):
     """Can list tables in S3 database."""
-    result = await s3_client.call_tool_mcp("query", {"query": "SHOW TABLES"})
+    result = await s3_client.call_tool_mcp("query", {"sql": "SHOW TABLES"})
     assert result.isError is False
     # Just verify it returns something (tables depend on the database)
     text = get_result_text(result)
@@ -61,9 +63,7 @@ async def test_s3_show_tables(s3_client):
 @pytest.mark.asyncio
 async def test_s3_is_readonly(s3_client):
     """S3 databases are attached as read-only, writes should fail."""
-    result = await s3_client.call_tool_mcp("query", {
-        "query": "CREATE TABLE should_fail_s3 (id INT)"
-    })
+    result = await s3_client.call_tool_mcp("query", {"sql": "CREATE TABLE should_fail_s3 (id INT)"})
     assert result.isError is True
     text = get_result_text(result)
     # Should fail due to read-only
@@ -74,12 +74,12 @@ async def test_s3_is_readonly(s3_client):
 async def test_s3_query_data(s3_client):
     """Can query actual data from S3 database."""
     # First get a table name
-    tables_result = await s3_client.call_tool_mcp("query", {"query": "SHOW TABLES"})
+    tables_result = await s3_client.call_tool_mcp("query", {"sql": "SHOW TABLES"})
     if tables_result.isError:
         pytest.skip("Could not list tables")
-    
+
     # Try to count rows in the first table
-    result = await s3_client.call_tool_mcp("query", {
-        "query": "SELECT COUNT(*) as total FROM (SHOW TABLES)"
-    })
+    result = await s3_client.call_tool_mcp(
+        "query", {"sql": "SELECT COUNT(*) as total FROM (SHOW TABLES)"}
+    )
     assert result.isError is False
