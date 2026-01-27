@@ -54,15 +54,14 @@ The MCP server supports the following parameters:
 
 | Parameter | Type | Default | Description                                                                                                                                                                                                                                                    |
 |-----------|------|---------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `--transport` | Choice | `stdio` | Transport type. Options: `stdio`, `sse`, `stream`                                                                                                                                                                                                              |
-| `--port` | Integer | `8000` | Port to listen on for sse and stream transport mode                                                                                                                                                                                                            |
-| `--host` | String | `127.0.0.1` | Host to bind the MCP server for sse and stream transport mode                                                                                                                                                                                                  |
+| `--transport` | Choice | `stdio` | Transport type. Options: `stdio`, `http`. (`sse` and `stream` are deprecated aliases)                                                                                                                                                                          |
+| `--port` | Integer | `8000` | Port to listen on for HTTP transport mode                                                                                                                                                                                                                      |
+| `--host` | String | `127.0.0.1` | Host to bind the MCP server for HTTP transport mode                                                                                                                                                                                                            |
 | `--db-path` | String | `md:` | Path to local DuckDB database file, MotherDuck database, or S3 URL (e.g., `s3://bucket/path/to/db.duckdb`)                                                                                                                                                     |
 | `--motherduck-token` | String | `None` | Access token to use for MotherDuck database connections (uses `motherduck_token` env var by default)                                                                                                                                                           |
 | `--read-only` | Flag | `False` | Flag for connecting to DuckDB or MotherDuck in read-only mode. For DuckDB it uses short-lived connections to enable concurrent access                                                                                                                          |
 | `--home-dir` | String | `None` | Home directory for DuckDB (uses `HOME` env var by default)                                                                                                                                                                                                     |
 | `--saas-mode` | Flag | `False` | Flag for connecting to MotherDuck in [SaaS mode](https://motherduck.com/docs/key-tasks/authenticating-and-connecting-to-motherduck/authenticating-to-motherduck/#authentication-using-saas-mode). (disables filesystem and write permissions for local DuckDB) |
-| `--json-response` | Flag | `False` | Enable JSON responses for HTTP stream. Only supported for `stream` transport                                                                                                                                                                                   |
 | `--max-rows` | Integer | `1024` | Maximum number of rows to return from queries.                                                                                                                                                                    |
 | `--max-chars` | Integer | `50000` | Maximum number of characters in query results.                                                                                                                                                          |
 | `--query-timeout` | Integer | `-1` | Query execution timeout in seconds. Set to -1 to disable timeout (default).                                                                                                                                                          |
@@ -79,8 +78,8 @@ uvx mcp-server-motherduck --db-path md: --motherduck-token YOUR_TOKEN
 # Connect to local DuckDB file in read-only mode
 uvx mcp-server-motherduck --db-path /path/to/local.db --read-only
 
-# Connect to MotherDuck in SaaS mode for enhanced security with stream transport mode
-uvx mcp-server-motherduck --transport stream --db-path md: --motherduck-token YOUR_TOKEN --saas-mode
+# Connect to MotherDuck in SaaS mode for enhanced security with HTTP transport
+uvx mcp-server-motherduck --transport http --db-path md: --motherduck-token YOUR_TOKEN --saas-mode
 
 # Customize result truncation limits
 uvx mcp-server-motherduck --db-path md: --motherduck-token YOUR_TOKEN --max-rows 2048 --max-chars 100000
@@ -402,29 +401,27 @@ Once configured, you can e.g. ask Claude to run queries like:
 - "Join data from my local DuckDB database with a table in MotherDuck"
 - "Analyze data stored in Amazon S3"
 
-## Running in SSE mode
+## Running in HTTP mode
 
-The server can run in SSE mode in two ways:
-
-### Direct SSE mode
-
-Run the server directly in SSE mode using the `--transport sse` flag:
+For web-based clients or network deployments, use HTTP transport:
 
 ```bash
-uvx mcp-server-motherduck --transport sse --port 8000 --db-path md: --motherduck-token <your_motherduck_token>
+uvx mcp-server-motherduck --transport http --port 8000 --db-path md: --motherduck-token <your_motherduck_token>
 ```
 
-This will start the server listening on the specified port (default 8000) and you can point your clients directly to this endpoint.
+This starts the server at `http://127.0.0.1:8000/mcp` using the MCP Streamable HTTP protocol.
 
 ### Using supergateway
 
-Alternatively, you can run SSE mode using `supergateway`:
+Alternatively, you can use `supergateway` to expose the stdio transport over HTTP:
 
 ```bash
 npx -y supergateway --stdio "uvx mcp-server-motherduck --db-path md: --motherduck-token <your_motherduck_token>"
 ```
 
-Both methods allow you to point your clients such as Claude Desktop, Cursor to the SSE endpoint.
+Both methods allow you to point your clients such as Claude Desktop, Cursor to the HTTP endpoint.
+
+> **Note**: The `--transport sse` and `--transport stream` options are deprecated. Use `--transport http` instead.
 
 ## Development configuration
 

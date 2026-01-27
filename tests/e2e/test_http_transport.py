@@ -1,7 +1,8 @@
 """
-E2E tests for HTTP transport modes (SSE and stream).
+E2E tests for HTTP transport modes.
 
-Tests the MCP server with --transport sse and --transport stream.
+Tests the MCP server with --transport http.
+Also includes tests for deprecated --transport sse.
 """
 
 import os
@@ -36,13 +37,16 @@ class MCPHttpServer:
         "Content-Type": "application/json",
     }
     
-    def __init__(self, transport: str, db_path: str, port: int, extra_args: list = None):
+    def __init__(self, transport: str, db_path: str, port: int, host: str = "127.0.0.1", extra_args: list = None):
         self.transport = transport
         self.db_path = db_path
         self.port = port
+        self.host = host
         self.extra_args = extra_args or []
         self.process = None
-        self.base_url = f"http://127.0.0.1:{port}"
+        # Use 127.0.0.1 to connect even if binding to 0.0.0.0
+        connect_host = "127.0.0.1" if host == "0.0.0.0" else host
+        self.base_url = f"http://{connect_host}:{port}"
     
     def __enter__(self):
         env = os.environ.copy()
@@ -51,6 +55,7 @@ class MCPHttpServer:
         cmd = [
             "uv", "run", "mcp-server-motherduck",
             "--transport", self.transport,
+            "--host", self.host,
             "--port", str(self.port),
             "--db-path", self.db_path,
         ] + self.extra_args
@@ -81,13 +86,13 @@ class MCPHttpServer:
             try:
                 with httpx.Client(follow_redirects=True, timeout=2.0) as client:
                     if self.transport == "sse":
-                        # SSE: check GET /sse endpoint returns 200
+                        # SSE (deprecated): check GET /sse endpoint returns 200
                         # Use stream=True to avoid waiting for full response
                         with client.stream("GET", f"{self.base_url}/sse") as response:
                             if response.status_code == 200:
                                 return  # Server is up
                     else:
-                        # Stream: POST to /mcp/ with proper headers
+                        # HTTP: POST to /mcp/ with proper headers
                         response = client.post(
                             f"{self.base_url}/mcp/",
                             headers=self.MCP_HEADERS,
@@ -115,15 +120,190 @@ class MCPHttpServer:
 
 
 # =============================================================================
-# SSE Transport Tests
+# HTTP Transport Tests
+# =============================================================================
+
+class TestHttpTransport:
+    """Tests for --transport http mode (MCP Streamable HTTP)."""
+    
+    def test_http_server_starts(self, memory_db):
+        """HTTP server starts and accepts connections."""
+        port = find_free_port()
+        with MCPHttpServer("http", memory_db, port) as server:
+            with httpx.Client(follow_redirects=True) as client:
+                response = server.post_mcp(client, {
+                    "jsonrpc": "2.0",
+                    "method": "initialize",
+                    "params": {
+                        "protocolVersion": "2024-11-05",
+                        "capabilities": {},
+                        "clientInfo": {"name": "test", "version": "1.0"}
+                    },
+                    "id": 1
+                })
+                assert response.status_code in [200, 202]
+    
+    def test_http_initialize(self, memory_db):
+        """Can send initialize request via HTTP transport."""
+        port = find_free_port()
+        with MCPHttpServer("http", memory_db, port) as server:
+            with httpx.Client(follow_redirects=True) as client:
+                response = server.post_mcp(client, {
+                    "jsonrpc": "2.0",
+                    "method": "initialize",
+                    "params": {
+                        "protocolVersion": "2024-11-05",
+                        "capabilities": {},
+                        "clientInfo": {"name": "test", "version": "1.0"}
+                    },
+                    "id": 1
+                })
+                assert response.status_code in [200, 202]
+    
+    def test_http_tools_list(self, memory_db):
+        """Can list tools via HTTP transport."""
+        port = find_free_port()
+        with MCPHttpServer("http", memory_db, port) as server:
+            with httpx.Client(follow_redirects=True) as client:
+                # Initialize first
+                init_response = server.post_mcp(client, {
+                    "jsonrpc": "2.0",
+                    "method": "initialize",
+                    "params": {
+                        "protocolVersion": "2024-11-05",
+                        "capabilities": {},
+                        "clientInfo": {"name": "test", "version": "1.0"}
+                    },
+                    "id": 1
+                })
+                assert init_response.status_code in [200, 202]
+                
+                # List tools
+                response = server.post_mcp(client, {
+                    "jsonrpc": "2.0",
+                    "method": "tools/list",
+                    "id": 2
+                })
+                assert response.status_code in [200, 202]
+    
+    def test_http_call_tool(self, memory_db):
+        """Can call query tool via HTTP transport."""
+        port = find_free_port()
+        with MCPHttpServer("http", memory_db, port) as server:
+            with httpx.Client(follow_redirects=True) as client:
+                # Initialize
+                server.post_mcp(client, {
+                    "jsonrpc": "2.0",
+                    "method": "initialize",
+                    "params": {
+                        "protocolVersion": "2024-11-05",
+                        "capabilities": {},
+                        "clientInfo": {"name": "test", "version": "1.0"}
+                    },
+                    "id": 1
+                })
+                
+                # Call query tool
+                response = server.post_mcp(client, {
+                    "jsonrpc": "2.0",
+                    "method": "tools/call",
+                    "params": {
+                        "name": "query",
+                        "arguments": {"query": "SELECT 1 as num"}
+                    },
+                    "id": 3
+                })
+                assert response.status_code in [200, 202]
+    
+    def test_http_returns_json(self, memory_db):
+        """HTTP transport always returns JSON responses."""
+        port = find_free_port()
+        with MCPHttpServer("http", memory_db, port) as server:
+            with httpx.Client(follow_redirects=True) as client:
+                # Initialize
+                server.post_mcp(client, {
+                    "jsonrpc": "2.0",
+                    "method": "initialize",
+                    "params": {
+                        "protocolVersion": "2024-11-05",
+                        "capabilities": {},
+                        "clientInfo": {"name": "test", "version": "1.0"}
+                    },
+                    "id": 1
+                })
+                
+                # Query and verify JSON response
+                response = server.post_mcp(client, {
+                    "jsonrpc": "2.0",
+                    "method": "tools/call",
+                    "params": {
+                        "name": "query",
+                        "arguments": {"query": "SELECT 42 as answer"}
+                    },
+                    "id": 2
+                })
+                assert response.status_code in [200, 202]
+                # Verify it's valid JSON (will raise if not)
+                response.json()
+
+
+# =============================================================================
+# Host Configuration Tests
+# =============================================================================
+
+class TestHostConfiguration:
+    """Tests for --host configuration."""
+    
+    def test_host_binding(self, memory_db):
+        """Server binds to specified host."""
+        port = find_free_port()
+        # Use 0.0.0.0 to bind to all interfaces, connect via 127.0.0.1
+        with MCPHttpServer("http", memory_db, port, host="0.0.0.0") as server:
+            # Override base_url to connect via localhost since 0.0.0.0 is not routable
+            with httpx.Client(follow_redirects=True) as client:
+                response = client.post(
+                    f"http://127.0.0.1:{port}/mcp/",
+                    headers=MCPHttpServer.MCP_HEADERS,
+                    json={
+                        "jsonrpc": "2.0",
+                        "method": "initialize",
+                        "params": {
+                            "protocolVersion": "2024-11-05",
+                            "capabilities": {},
+                            "clientInfo": {"name": "test", "version": "1.0"}
+                        },
+                        "id": 1
+                    },
+                )
+                assert response.status_code in [200, 202]
+    
+    def test_localhost_binding(self, memory_db):
+        """Server binds to localhost (127.0.0.1)."""
+        port = find_free_port()
+        with MCPHttpServer("http", memory_db, port, host="127.0.0.1") as server:
+            with httpx.Client(follow_redirects=True) as client:
+                response = server.post_mcp(client, {
+                    "jsonrpc": "2.0",
+                    "method": "initialize",
+                    "params": {
+                        "protocolVersion": "2024-11-05",
+                        "capabilities": {},
+                        "clientInfo": {"name": "test", "version": "1.0"}
+                    },
+                    "id": 1
+                })
+                assert response.status_code in [200, 202]
+
+
+# =============================================================================
+# Deprecated SSE Transport Tests
 # =============================================================================
 
 class TestSSETransport:
-    """Tests for --transport sse mode.
+    """Tests for deprecated --transport sse mode.
     
-    Note: Full SSE protocol testing is complex because it requires maintaining
-    a streaming connection to get session IDs. These tests verify basic
-    server functionality.
+    Note: SSE transport is deprecated. Use --transport http instead.
+    These tests ensure backward compatibility during the deprecation period.
     """
     
     def test_sse_server_starts(self, memory_db):
@@ -155,14 +335,14 @@ class TestSSETransport:
 
 
 # =============================================================================
-# Stream Transport Tests  
+# Deprecated Stream Transport Alias Tests
 # =============================================================================
 
-class TestStreamTransport:
-    """Tests for --transport stream mode."""
+class TestStreamTransportAlias:
+    """Tests that deprecated --transport stream still works as alias for http."""
     
-    def test_stream_server_starts(self, memory_db):
-        """Stream server starts and accepts connections."""
+    def test_stream_alias_works(self, memory_db):
+        """--transport stream still works (mapped to http)."""
         port = find_free_port()
         with MCPHttpServer("stream", memory_db, port) as server:
             with httpx.Client(follow_redirects=True) as client:
@@ -175,131 +355,5 @@ class TestStreamTransport:
                         "clientInfo": {"name": "test", "version": "1.0"}
                     },
                     "id": 1
-                })
-                assert response.status_code in [200, 202]
-    
-    def test_stream_initialize(self, memory_db):
-        """Can send initialize request via stream transport."""
-        port = find_free_port()
-        with MCPHttpServer("stream", memory_db, port) as server:
-            with httpx.Client(follow_redirects=True) as client:
-                response = server.post_mcp(client, {
-                    "jsonrpc": "2.0",
-                    "method": "initialize",
-                    "params": {
-                        "protocolVersion": "2024-11-05",
-                        "capabilities": {},
-                        "clientInfo": {"name": "test", "version": "1.0"}
-                    },
-                    "id": 1
-                })
-                assert response.status_code in [200, 202]
-    
-    def test_stream_tools_list(self, memory_db):
-        """Can list tools via stream transport."""
-        port = find_free_port()
-        with MCPHttpServer("stream", memory_db, port) as server:
-            with httpx.Client(follow_redirects=True) as client:
-                # Initialize first
-                init_response = server.post_mcp(client, {
-                    "jsonrpc": "2.0",
-                    "method": "initialize",
-                    "params": {
-                        "protocolVersion": "2024-11-05",
-                        "capabilities": {},
-                        "clientInfo": {"name": "test", "version": "1.0"}
-                    },
-                    "id": 1
-                })
-                assert init_response.status_code in [200, 202]
-                
-                # List tools
-                response = server.post_mcp(client, {
-                    "jsonrpc": "2.0",
-                    "method": "tools/list",
-                    "id": 2
-                })
-                assert response.status_code in [200, 202]
-    
-    def test_stream_call_tool(self, memory_db):
-        """Can call query tool via stream transport."""
-        port = find_free_port()
-        with MCPHttpServer("stream", memory_db, port) as server:
-            with httpx.Client(follow_redirects=True) as client:
-                # Initialize
-                server.post_mcp(client, {
-                    "jsonrpc": "2.0",
-                    "method": "initialize",
-                    "params": {
-                        "protocolVersion": "2024-11-05",
-                        "capabilities": {},
-                        "clientInfo": {"name": "test", "version": "1.0"}
-                    },
-                    "id": 1
-                })
-                
-                # Call query tool
-                response = server.post_mcp(client, {
-                    "jsonrpc": "2.0",
-                    "method": "tools/call",
-                    "params": {
-                        "name": "query",
-                        "arguments": {"query": "SELECT 1 as num"}
-                    },
-                    "id": 3
-                })
-                assert response.status_code in [200, 202]
-
-
-# =============================================================================
-# Stream Transport with JSON Response Tests
-# =============================================================================
-
-class TestStreamJsonResponse:
-    """Tests for --transport stream --json-response mode."""
-    
-    def test_json_response_server_starts(self, memory_db):
-        """Stream server with json-response starts correctly."""
-        port = find_free_port()
-        with MCPHttpServer("stream", memory_db, port, ["--json-response"]) as server:
-            with httpx.Client(follow_redirects=True) as client:
-                response = server.post_mcp(client, {
-                    "jsonrpc": "2.0",
-                    "method": "initialize",
-                    "params": {
-                        "protocolVersion": "2024-11-05",
-                        "capabilities": {},
-                        "clientInfo": {"name": "test", "version": "1.0"}
-                    },
-                    "id": 1
-                })
-                assert response.status_code in [200, 202]
-    
-    def test_json_response_query(self, memory_db):
-        """Can execute queries with json-response mode."""
-        port = find_free_port()
-        with MCPHttpServer("stream", memory_db, port, ["--json-response"]) as server:
-            with httpx.Client(follow_redirects=True) as client:
-                # Initialize
-                server.post_mcp(client, {
-                    "jsonrpc": "2.0",
-                    "method": "initialize",
-                    "params": {
-                        "protocolVersion": "2024-11-05",
-                        "capabilities": {},
-                        "clientInfo": {"name": "test", "version": "1.0"}
-                    },
-                    "id": 1
-                })
-                
-                # Query
-                response = server.post_mcp(client, {
-                    "jsonrpc": "2.0",
-                    "method": "tools/call",
-                    "params": {
-                        "name": "query",
-                        "arguments": {"query": "SELECT 42 as answer"}
-                    },
-                    "id": 2
                 })
                 assert response.status_code in [200, 202]

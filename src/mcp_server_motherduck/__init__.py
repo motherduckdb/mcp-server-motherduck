@@ -1,5 +1,6 @@
 import anyio
 import logging
+import warnings
 import click
 from .server import build_application
 from .configs import SERVER_VERSION, SERVER_LOCALHOST, UVICORN_LOGGING_CONFIG
@@ -13,13 +14,13 @@ logging.basicConfig(
 
 
 @click.command()
-@click.option("--port", default=8000, help="Port to listen on for SSE")
+@click.option("--port", default=8000, help="Port to listen on for HTTP transport")
 @click.option("--host", default=SERVER_LOCALHOST, help="Host to bind the MCP server")
 @click.option(
     "--transport",
-    type=click.Choice(["stdio", "sse", "stream"]),
+    type=click.Choice(["stdio", "http", "sse", "stream"]),
     default="stdio",
-    help="(Default: `stdio`) Transport type",
+    help="(Default: `stdio`) Transport type. Use `http` for HTTP Streamable transport. `sse` and `stream` are deprecated aliases.",
 )
 @click.option(
     "--db-path",
@@ -45,12 +46,6 @@ logging.basicConfig(
     "--read-only",
     is_flag=True,
     help="Flag for connecting to DuckDB in read-only mode. Only supported for local DuckDB databases. Also makes use of short lived connections so multiple MCP clients or other systems can remain active (though each operation must be done sequentially).",
-)
-@click.option(
-    "--json-response",
-    is_flag=True,
-    default=False,
-    help="(Default: `False`) Enable JSON responses instead of SSE streams. Only supported for `stream` transport.",
 )
 @click.option(
     "--max-rows",
@@ -79,7 +74,6 @@ def main(
     home_dir,
     saas_mode,
     read_only,
-    json_response,
     max_rows,
     max_chars,
     query_timeout,
@@ -93,6 +87,23 @@ def main(
         logger.info("Query timeout: disabled")
     else:
         logger.info(f"Query timeout: {query_timeout}s")
+
+    # Handle deprecated transport aliases
+    if transport == "stream":
+        warnings.warn(
+            "The 'stream' transport is deprecated. Use 'http' instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        logger.warning("⚠️  '--transport stream' is deprecated. Use '--transport http' instead.")
+        transport = "http"
+    elif transport == "sse":
+        warnings.warn(
+            "The 'sse' transport is deprecated. Use 'http' instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        logger.warning("⚠️  '--transport sse' is deprecated. Use '--transport http' instead.")
 
     app, init_opts = build_application(
         db_path=db_path,
@@ -111,7 +122,7 @@ def main(
         from starlette.responses import Response
         from starlette.routing import Mount, Route
 
-        logger.info("MCP server initialized in \033[32msse\033[0m mode")
+        logger.info("MCP server initialized in \033[32msse\033[0m mode (deprecated)")
 
         sse = SseServerTransport("/messages/")
 
@@ -143,7 +154,7 @@ def main(
             log_config=UVICORN_LOGGING_CONFIG,
         )
 
-    elif transport == "stream":
+    elif transport == "http":
         from mcp.server.streamable_http_manager import StreamableHTTPSessionManager
         from collections.abc import AsyncIterator
         from starlette.applications import Starlette
@@ -151,13 +162,13 @@ def main(
         from starlette.types import Receive, Scope, Send
         import contextlib
 
-        logger.info("MCP server initialized in \033[32mhttp-streamable\033[0m mode")
+        logger.info("MCP server initialized in \033[32mhttp\033[0m mode")
 
-        # Create the session manager with true stateless mode
+        # Create the session manager with JSON responses (always enabled)
         session_manager = StreamableHTTPSessionManager(
             app=app,
             event_store=None,
-            json_response=json_response,
+            json_response=True,
             stateless=True,
         )
 
@@ -170,12 +181,12 @@ def main(
         async def lifespan(app: Starlette) -> AsyncIterator[None]:
             """Context manager for session manager."""
             async with session_manager.run():
-                logger.info("MCP server started with StreamableHTTP session manager")
+                logger.info("MCP server started with HTTP Streamable session manager")
                 try:
                     yield
                 finally:
                     logger.info(
-                        "🦆 MotherDuck MCP Server in \033[32mhttp-streamable\033[0m mode shutting down"
+                        "🦆 MotherDuck MCP Server in \033[32mhttp\033[0m mode shutting down"
                     )
 
         logger.info(
