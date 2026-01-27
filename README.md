@@ -22,17 +22,8 @@ A local MCP server implementation that interacts with DuckDB and MotherDuck data
 **The server now runs in read-only mode by default** for local DuckDB files and MotherDuck databases. This protects against accidental data modification by LLMs.
 
 - To enable write access, use the `--read-write` flag
-- In-memory databases (`:memory:`) are always writable (DuckDB limitation)
 - Read-only mode on local DuckDB files uses temporary connections by default (`--ephemeral-connections`), creating a new connection for each query so other processes can write to the file
 - For persistent read-only connections, use `--no-ephemeral-connections`
-
-## Features
-
-- **Hybrid execution**: query data from local DuckDB or/and cloud-based MotherDuck databases
-- **Cloud storage integration**: access data stored in Amazon S3 or other cloud storage thanks to MotherDuck's integrations
-- **Data sharing**: create and share databases
-- **SQL analytics**: use DuckDB's SQL dialect to query any size of data directly from your AI Assistant or IDE
-- **Serverless architecture**: run analytics without needing to configure instances or clusters
 
 ## Tools
 
@@ -86,61 +77,53 @@ The MCP server supports the following parameters:
 | `--home-dir` | String | `None` | Home directory for DuckDB (uses `HOME` env var by default)                                                                                                                                                                                                     |
 | `--read-write` | Flag | `False` | Enable write access to the database. By default, the server runs in read-only mode for local DuckDB files and MotherDuck.                                                                   |
 | `--saas-mode` | Flag | `False` | Flag for connecting to MotherDuck in [SaaS mode](https://motherduck.com/docs/key-tasks/authenticating-and-connecting-to-motherduck/authenticating-to-motherduck/#authentication-using-saas-mode). (disables filesystem and write permissions for local DuckDB) |
-| `--allow-switch-databases` | Flag | `False` | Enable the `switch_database_connection` tool to change databases at runtime. Disabled by default.                                                                                                          |
-| `--ephemeral-connections` | Flag | `True` | Use temporary connections for read-only local DuckDB files, creating a new connection for each query. This keeps the file unlocked so other processes can write to it.                                                  |
 | `--init-sql` | String | `None` | SQL file path or SQL string to execute on startup for database initialization.                                                                                                                                                          |
+| `--ephemeral-connections` | Flag | `True` | Use temporary connections for read-only local DuckDB files, creating a new connection for each query. This keeps the file unlocked so other processes can write to it.                                                  |
+| `--allow-switch-databases` | Flag | `False` | Enable the `switch_database_connection` tool to change databases at runtime. Disabled by default.                                                                                                          |
 | `--max-rows` | Integer | `1024` | Maximum number of rows to return from queries.                                                                                                                                                                    |
 | `--max-chars` | Integer | `50000` | Maximum number of characters in query results.                                                                                                                                                          |
 | `--query-timeout` | Integer | `-1` | Query execution timeout in seconds. Set to -1 to disable timeout (default).                                                                                                                                                          |
 
-### Quick Usage Examples
+### Configuration Examples
 
-```bash
-# Connect to local DuckDB file (read-only by default)
-uvx mcp-server-motherduck --db-path /path/to/local.db
-
-# Connect to local DuckDB file with write access
-uvx mcp-server-motherduck --db-path /path/to/local.db --read-write
-
-# Connect to MotherDuck with token
-uvx mcp-server-motherduck --db-path md: --motherduck-token YOUR_TOKEN
-
-# Connect to local DuckDB file (read-only by default)
-uvx mcp-server-motherduck --db-path /path/to/local.db
-
-# Connect to local DuckDB file with write access
-uvx mcp-server-motherduck --db-path /path/to/local.db --read-write
-
-# Connect to MotherDuck in SaaS mode for enhanced security with HTTP transport
-uvx mcp-server-motherduck --transport http --db-path md: --motherduck-token YOUR_TOKEN --saas-mode
-
-# Customize result truncation limits
-uvx mcp-server-motherduck --db-path md: --motherduck-token YOUR_TOKEN --max-rows 2048 --max-chars 100000
-
-# Enable query timeout (5 minutes)
-uvx mcp-server-motherduck --db-path md: --motherduck-token YOUR_TOKEN --query-timeout 300
-
-# Initialize database with SQL file
-uvx mcp-server-motherduck --db-path :memory: --init-sql /path/to/schema.sql
-
-# Initialize database with inline SQL
-uvx mcp-server-motherduck --db-path :memory: --init-sql "CREATE TABLE test (id INTEGER, name VARCHAR); INSERT INTO test VALUES (1, 'hello');"
+**Local DuckDB (read-only, default):**
+```json
+{
+  "mcpServers": {
+    "mcp-server-motherduck": {
+      "command": "uvx",
+      "args": ["mcp-server-motherduck", "--db-path", "/path/to/local.db"]
+    }
+  }
+}
 ```
 
-### Database Initialization with --init-sql
+**Local DuckDB (dev mode with write access and database switching):**
+```json
+{
+  "mcpServers": {
+    "mcp-server-motherduck": {
+      "command": "uvx",
+      "args": ["mcp-server-motherduck", "--db-path", "/path/to/local.db", "--read-write", "--allow-switch-databases"]
+    }
+  }
+}
+```
 
-The `--init-sql` parameter allows you to execute SQL commands automatically when the server starts. This is useful for:
-
-- Setting up database schemas and tables
-- Loading initial data
-- Configuring database settings
-- Creating views or functions
-
-You can provide either:
-1. **A file path** to a `.sql` file containing your initialization SQL
-2. **A raw SQL string** with your initialization commands
-
-The initialization SQL is executed after the database connection is established but before the server starts accepting queries.
+**MotherDuck (production with SaaS mode and HTTP transport):**
+```json
+{
+  "mcpServers": {
+    "mcp-server-motherduck": {
+      "command": "uvx",
+      "args": ["mcp-server-motherduck", "--db-path", "md:", "--saas-mode", "--transport", "http", "--port", "8000"],
+      "env": {
+        "motherduck_token": "<YOUR_READ_SCALING_TOKEN>"
+      }
+    }
+  }
+}
+```
 
 ## Getting Started
 
@@ -153,7 +136,7 @@ If you plan to use the MCP with Claude Desktop or any other MCP comptabile clien
 ### Prerequisites for DuckDB
 
 - No prerequisites. The MCP server can create an in-memory database on-the-fly
-- Or connect to an existing local DuckDB database file , or one stored on remote object storage (e.g., AWS S3).
+- Or connect to an existing local DuckDB database file, or one stored on remote object storage (e.g., AWS S3).
 
 See [Connect to local DuckDB](#connect-to-local-duckdb).
 
@@ -177,13 +160,10 @@ See [Connect to local DuckDB](#connect-to-local-duckdb).
   "mcpServers": {
     "mcp-server-motherduck": {
       "command": "uvx",
-      "args": [
-        "mcp-server-motherduck",
-        "--db-path",
-        "md:",
-        "--motherduck-token",
-        "<YOUR_MOTHERDUCK_TOKEN_HERE>"
-      ]
+      "args": ["mcp-server-motherduck", "--db-path", "md:"],
+      "env": {
+        "motherduck_token": "<YOUR_MOTHERDUCK_TOKEN>"
+      }
     }
   }
 }
@@ -213,13 +193,10 @@ Add the following JSON block to your User Settings (JSON) file in VS Code. You c
     "servers": {
       "motherduck": {
         "command": "uvx",
-        "args": [
-          "mcp-server-motherduck",
-          "--db-path",
-          "md:",
-          "--motherduck-token",
-          "${input:motherduck_token}"
-        ]
+        "args": ["mcp-server-motherduck", "--db-path", "md:"],
+        "env": {
+          "motherduck_token": "${input:motherduck_token}"
+        }
       }
     }
   }
@@ -241,13 +218,10 @@ Optionally, you can add it to a file called `.vscode/mcp.json` in your workspace
   "servers": {
     "motherduck": {
       "command": "uvx",
-      "args": [
-        "mcp-server-motherduck",
-        "--db-path",
-        "md:",
-        "--motherduck-token",
-        "${input:motherduck_token}"
-      ]
+      "args": ["mcp-server-motherduck", "--db-path", "md:"],
+      "env": {
+        "motherduck_token": "${input:motherduck_token}"
+      }
     }
   }
 }
@@ -267,21 +241,14 @@ Optionally, you can add it to a file called `.vscode/mcp.json` in your workspace
   "mcpServers": {
     "mcp-server-motherduck": {
       "command": "uvx",
-      "args": [
-        "mcp-server-motherduck",
-        "--db-path",
-        "md:",
-        "--motherduck-token",
-        "<YOUR_MOTHERDUCK_TOKEN_HERE>"
-      ]
+      "args": ["mcp-server-motherduck", "--db-path", "md:"],
+      "env": {
+        "motherduck_token": "<YOUR_MOTHERDUCK_TOKEN>"
+      }
     }
   }
 }
 ```
-
-**Important Notes**:
-
-- Replace `YOUR_MOTHERDUCK_TOKEN_HERE` with your actual MotherDuck token
 
 ### Usage with Claude Code
 
@@ -292,7 +259,7 @@ Claude Code supports MCP servers through CLI commands or JSON configuration. Her
 Add the MotherDuck MCP server directly using the Claude Code CLI:
 
 ```bash
-claude mcp add mcp-server-motherduck uvx mcp-server-motherduck -- --db-path md: --motherduck-token <YOUR_MOTHERDUCK_TOKEN_HERE>
+claude mcp add mcp-server-motherduck uvx mcp-server-motherduck -- --db-path md: -e motherduck_token=<YOUR_MOTHERDUCK_TOKEN>
 ```
 
 #### Option 2: Using JSON Configuration
@@ -302,13 +269,10 @@ Add the server using a JSON configuration:
 ```bash
 claude mcp add-json mcp-server-motherduck '{
   "command": "uvx",
-  "args": [
-    "mcp-server-motherduck",
-    "--db-path",
-    "md:",
-    "--motherduck-token",
-    "<YOUR_MOTHERDUCK_TOKEN_HERE>"
-  ]
+  "args": ["mcp-server-motherduck", "--db-path", "md:"],
+  "env": {
+    "motherduck_token": "<YOUR_MOTHERDUCK_TOKEN>"
+  }
 }'
 ```
 
@@ -316,10 +280,6 @@ claude mcp add-json mcp-server-motherduck '{
 - Use `--local` (default) for project-specific configuration
 - Use `--project` to share the configuration with your team via `.mcp.json`
 - Use `--user` to make the server available across all your projects
-
-**Important Notes**:
-- Replace `YOUR_MOTHERDUCK_TOKEN_HERE` with your actual MotherDuck token
-- Claude Code also supports environment variable expansion, so you can use `${MOTHERDUCK_TOKEN}` if you've set the environment variable
 
 ## Read-Only Mode
 
@@ -337,21 +297,17 @@ Refer to the [Read Scaling documentation](https://motherduck.com/docs/key-tasks/
 
 **SaaS Mode** in MotherDuck enhances security by restricting access to local files, databases, extensions, and configurations, making it ideal for third-party tools that require stricter environment protection. Learn more about it in the [SaaS Mode documentation](https://motherduck.com/docs/key-tasks/authenticating-and-connecting-to-motherduck/authenticating-to-motherduck/#authentication-using-saas-mode).
 
-**Secure Production Configuration**
+**Production Configuration**
 
 ```json
 {
   "mcpServers": {
     "mcp-server-motherduck": {
       "command": "uvx",
-      "args": [
-        "mcp-server-motherduck",
-        "--db-path",
-        "md:",
-        "--motherduck-token",
-        "<YOUR_READ_SCALING_TOKEN_HERE>",
-        "--saas-mode"
-      ]
+      "args": ["mcp-server-motherduck", "--db-path", "md:", "--saas-mode"],
+      "env": {
+        "motherduck_token": "<YOUR_READ_SCALING_TOKEN>"
+      }
     }
   }
 }
@@ -412,13 +368,15 @@ Local DuckDB file in [readonly mode](https://duckdb.org/docs/stable/connect/conc
 }
 ```
 
-**Note**: readonly mode for local file-backed DuckDB connections also makes use of
-short lived connections. Each time the query MCP tool is used a temporary,
-reaodnly connection is created + query is executed + connection is closed. This
-feature was motivated by a workflow where [DBT](https://www.getdbt.com) was for
-modeling data within duckdb and then an MCP client (Windsurf/Cline/Claude/Cursor)
-was used for exploring the database. The short lived connections allow each tool
+**Note**:Read-only mode for local file-backed DuckDB connections also makes use of
+short-lived connections. Each time the query MCP tool is used, a temporary
+read-only connection is created, the query is executed, and the connection is closed. This
+feature was motivated by a workflow where [DBT](https://www.getdbt.com) was used for
+modeling data within DuckDB and then an MCP client (Windsurf/Cline/Claude/Cursor)
+was used for exploring the database. The short-lived connections allow each tool
 to run and then release their connection, allowing the next tool to connect.
+
+To disable this and use a persistent connection, use `--no-ephemeral-connections`.
 
 ## Connect to DuckDB on S3
 
@@ -461,47 +419,26 @@ Once configured, you can e.g. ask Claude to run queries like:
 - "Join data from my local DuckDB database with a table in MotherDuck"
 - "Analyze data stored in Amazon S3"
 
-## Running in HTTP mode
+## Troubleshooting
 
-For web-based clients or network deployments, use HTTP transport:
-
-```bash
-uvx mcp-server-motherduck --transport http --port 8000 --db-path md: --motherduck-token <your_motherduck_token>
-```
-
-This starts the server at `http://127.0.0.1:8000/mcp` using the MCP Streamable HTTP protocol.
-
-### Using supergateway
-
-Alternatively, you can use `supergateway` to expose the stdio transport over HTTP:
-
-```bash
-npx -y supergateway --stdio "uvx mcp-server-motherduck --db-path md: --motherduck-token <your_motherduck_token>"
-```
-
-Both methods allow you to point your clients such as Claude Desktop, Cursor to the HTTP endpoint.
-
-> **Note**: The `--transport sse` and `--transport stream` options are deprecated. Use `--transport http` instead.
+- If you encounter connection issues, verify your MotherDuck token is correct
+- For local file access problems, ensure the `--home-dir` parameter is set correctly
+- Check that the `uvx` command is available in your PATH
+- If you encounter [`spawn uvx ENOENT`](https://github.com/motherduckdb/mcp-server-motherduck/issues/6) errors, try specifying the full path to `uvx` (output of `which uvx`)
 
 ## Development configuration
 
 To run the server from a local development environment, use the following configuration:
 
 ```json
- {
+{
   "mcpServers": {
     "mcp-server-motherduck": {
       "command": "uv",
-      "args": [
-        "--directory",
-        "/path/to/your/local/mcp-server-motherduck",
-        "run",
-        "mcp-server-motherduck",
-        "--db-path",
-        "md:",
-        "--motherduck-token",
-        "<YOUR_MOTHERDUCK_TOKEN_HERE>"
-      ]
+      "args": ["--directory", "/path/to/your/local/mcp-server-motherduck", "run", "mcp-server-motherduck", "--db-path", "md:"],
+      "env": {
+        "motherduck_token": "<YOUR_MOTHERDUCK_TOKEN>"
+      }
     }
   }
 }
@@ -516,14 +453,6 @@ This repo uses a GitHub Actions workflow to bump, tag, publish, and create a rel
 3. Run the workflow
 
 The workflow will update all versioned files, commit and tag `vX.Y.Z`, publish to PyPI and the MCP registry, then create the GitHub release.
-
-## Troubleshooting
-
-- If you encounter connection issues, verify your MotherDuck token is correct
-- For local file access problems, ensure the `--home-dir` parameter is set correctly
-- Check that the `uvx` command is available in your PATH
-- If you encounter [`spawn uvx ENOENT`](https://github.com/motherduckdb/mcp-server-motherduck/issues/6) errors, try specifying the full path to `uvx` (output of `which uvx`)
-- In version previous for v0.4.0 we used environment variables, now we use parameters
 
 ## License
 
