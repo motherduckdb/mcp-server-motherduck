@@ -1,6 +1,5 @@
 import os
-import base64
-import json
+import re
 import duckdb
 from typing import Literal, Optional
 from tabulate import tabulate
@@ -11,37 +10,26 @@ from .configs import SERVER_VERSION
 logger = logging.getLogger("mcp_server_motherduck")
 
 
-def _parse_motherduck_token(token: str) -> dict | None:
+def _is_read_scaling_connection(conn: duckdb.DuckDBPyConnection) -> bool:
     """
-    Parse a MotherDuck JWT token and return its payload.
+    Check if a MotherDuck connection is using read-scaling.
     
-    Returns None if the token cannot be parsed.
+    Read-scaling connections have a duckling ID ending with .rs.{number}
+    e.g., "omni_primary.rs.3", "mcp_server.rs.0"
+    
+    Read-write connections end with .rw
+    e.g., "omni_primary.rw", "mcp_server.rw"
     """
     try:
-        # JWT format: header.payload.signature
-        parts = token.split('.')
-        if len(parts) != 3:
-            return None
-        
-        # Decode the payload (middle part)
-        payload = parts[1]
-        # Add padding if needed for base64
-        padding = 4 - len(payload) % 4
-        if padding != 4:
-            payload += '=' * padding
-        
-        decoded = base64.urlsafe_b64decode(payload)
-        return json.loads(decoded)
-    except Exception:
-        return None
-
-
-def _is_readonly_token(token: str) -> bool:
-    """Check if a MotherDuck token is a read-only token (e.g., read-scaling token)."""
-    payload = _parse_motherduck_token(token)
-    if payload is None:
+        # __md_duckling_id() is a table function, must use FROM clause
+        result = conn.execute("SELECT * FROM __md_duckling_id()").fetchone()
+        if result and result[0]:
+            duckling_id = result[0]
+            # Check if duckling ID ends with .rs.{number}
+            return bool(re.search(r'\.rs\.\d+$', duckling_id))
         return False
-    return payload.get('readOnly', False) is True
+    except Exception:
+        return False
 
 
 class DatabaseClient:
@@ -60,7 +48,6 @@ class DatabaseClient:
         self._max_rows = max_rows
         self._max_chars = max_chars
         self._query_timeout = query_timeout
-        self._motherduck_token = motherduck_token or os.getenv("motherduck_token")
         self.db_path, self.db_type = self._resolve_db_path_type(
             db_path, motherduck_token, saas_mode
         )
@@ -81,17 +68,6 @@ class DatabaseClient:
         if self.db_type == "s3" and self._read_only:
             raise ValueError("Read-only mode is not supported for S3 databases")
         
-        # MotherDuck with --read-only flag requires a read-only token (e.g., read-scaling token)
-        # Using a read/write token with --read-only is misleading and not supported
-        if self.db_type == "motherduck" and self._read_only:
-            if self._motherduck_token and not _is_readonly_token(self._motherduck_token):
-                raise ValueError(
-                    "The --read-only flag with MotherDuck requires a read-only token (e.g., read-scaling token). "
-                    "You appear to be using a read/write token. Please use a read-only token instead. "
-                    "See: https://motherduck.com/docs/key-tasks/authenticating-and-connecting-to-motherduck/"
-                )
-            # If using read-only token with --read-only flag, that's fine - continue normally
-            logger.info("Using read-only token with --read-only flag")
 
         if self.db_type == "duckdb" and self._read_only:
             # check that we can connect, issue a `select 1` and then close + return None
@@ -188,6 +164,17 @@ class DatabaseClient:
         )
 
         logger.info(f"✅ Successfully connected to {self.db_type} database")
+
+        # For MotherDuck with --read-only flag, verify it's a read-scaling connection
+        if self.db_type == "motherduck" and self._read_only:
+            if not _is_read_scaling_connection(conn):
+                conn.close()
+                raise ValueError(
+                    "The --read-only flag with MotherDuck requires a read-scaling token. "
+                    "You appear to be using a read/write token. Please use a read-scaling token instead. "
+                    "See: https://motherduck.com/docs/key-tasks/authenticating-and-connecting-to-motherduck/"
+                )
+            logger.info("Verified read-scaling connection for --read-only mode")
 
         return conn
 
