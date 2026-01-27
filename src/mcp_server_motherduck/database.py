@@ -1,4 +1,6 @@
 import os
+import base64
+import json
 import duckdb
 from typing import Literal, Optional
 from tabulate import tabulate
@@ -7,6 +9,39 @@ import threading
 from .configs import SERVER_VERSION
 
 logger = logging.getLogger("mcp_server_motherduck")
+
+
+def _parse_motherduck_token(token: str) -> dict | None:
+    """
+    Parse a MotherDuck JWT token and return its payload.
+    
+    Returns None if the token cannot be parsed.
+    """
+    try:
+        # JWT format: header.payload.signature
+        parts = token.split('.')
+        if len(parts) != 3:
+            return None
+        
+        # Decode the payload (middle part)
+        payload = parts[1]
+        # Add padding if needed for base64
+        padding = 4 - len(payload) % 4
+        if padding != 4:
+            payload += '=' * padding
+        
+        decoded = base64.urlsafe_b64decode(payload)
+        return json.loads(decoded)
+    except Exception:
+        return None
+
+
+def _is_readonly_token(token: str) -> bool:
+    """Check if a MotherDuck token is a read-only token (e.g., read-scaling token)."""
+    payload = _parse_motherduck_token(token)
+    if payload is None:
+        return False
+    return payload.get('readOnly', False) is True
 
 
 class DatabaseClient:
@@ -25,6 +60,7 @@ class DatabaseClient:
         self._max_rows = max_rows
         self._max_chars = max_chars
         self._query_timeout = query_timeout
+        self._motherduck_token = motherduck_token or os.getenv("motherduck_token")
         self.db_path, self.db_type = self._resolve_db_path_type(
             db_path, motherduck_token, saas_mode
         )
@@ -44,6 +80,18 @@ class DatabaseClient:
         # S3 databases don't support read-only mode
         if self.db_type == "s3" and self._read_only:
             raise ValueError("Read-only mode is not supported for S3 databases")
+        
+        # MotherDuck with --read-only flag requires a read-only token (e.g., read-scaling token)
+        # Using a read/write token with --read-only is misleading and not supported
+        if self.db_type == "motherduck" and self._read_only:
+            if self._motherduck_token and not _is_readonly_token(self._motherduck_token):
+                raise ValueError(
+                    "The --read-only flag with MotherDuck requires a read-only token (e.g., read-scaling token). "
+                    "You appear to be using a read/write token. Please use a read-only token instead. "
+                    "See: https://motherduck.com/docs/key-tasks/authenticating-and-connecting-to-motherduck/"
+                )
+            # If using read-only token with --read-only flag, that's fine - continue normally
+            logger.info("Using read-only token with --read-only flag")
 
         if self.db_type == "duckdb" and self._read_only:
             # check that we can connect, issue a `select 1` and then close + return None
