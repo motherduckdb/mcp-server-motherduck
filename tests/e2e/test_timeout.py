@@ -18,7 +18,7 @@ async def test_fast_query_completes(test_db_path):
     client = create_limited_client(str(test_db_path), query_timeout=10)
 
     async with client:
-        result = await client.call_tool_mcp("query", {"sql": "SELECT 1 as num"})
+        result = await client.call_tool_mcp("execute_query", {"sql": "SELECT 1 as num"})
         assert result.isError is False
         text = get_result_text(result)
 
@@ -39,7 +39,7 @@ async def test_slow_query_times_out():
 
     async with client:
         result = await client.call_tool_mcp(
-            "query",
+            "execute_query",
             {
                 "sql": """
                 SELECT COUNT(*) FROM (
@@ -67,7 +67,7 @@ async def test_timeout_disabled_with_negative_one():
     async with client:
         # A query that should complete
         result = await client.call_tool_mcp(
-            "query",
+            "execute_query",
             {
                 "sql": """
                 SELECT COUNT(*) as cnt FROM range(100000)
@@ -89,7 +89,7 @@ async def test_moderate_query_with_adequate_timeout(test_db_path):
 
     async with client:
         result = await client.call_tool_mcp(
-            "query", {"sql": "SELECT COUNT(*) as cnt FROM large_table"}
+            "execute_query", {"sql": "SELECT COUNT(*) as cnt FROM large_table"}
         )
         assert result.isError is False
         text = get_result_text(result)

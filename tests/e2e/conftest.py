@@ -16,6 +16,12 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+# Map E2E env vars to standard AWS env vars
+if os.environ.get("E2E_USER_1_AWS_ACCESS_KEY_ID"):
+    os.environ["AWS_ACCESS_KEY_ID"] = os.environ["E2E_USER_1_AWS_ACCESS_KEY_ID"]
+if os.environ.get("E2E_USER_1_AWS_SECRET_ACCESS_KEY"):
+    os.environ["AWS_SECRET_ACCESS_KEY"] = os.environ["E2E_USER_1_AWS_SECRET_ACCESS_KEY"]
+
 from fastmcp import Client
 from fastmcp.client.transports import StdioTransport
 
@@ -111,7 +117,7 @@ async def local_client(test_db_path: Path) -> AsyncGenerator[Client, None]:
 @pytest.fixture
 async def memory_client() -> AsyncGenerator[Client, None]:
     """Create a client connected to an in-memory DuckDB (always writable)."""
-    client = get_mcp_client("--db-path", ":memory:")
+    client = get_mcp_client("--db-path", ":memory:", "--read-write")
     async with client:
         yield client
 
@@ -119,7 +125,7 @@ async def memory_client() -> AsyncGenerator[Client, None]:
 @pytest.fixture
 async def memory_client_with_switch() -> AsyncGenerator[Client, None]:
     """Create a client connected to an in-memory DuckDB with switch_database_connection enabled."""
-    client = get_mcp_client("--db-path", ":memory:", "--allow-switch-databases")
+    client = get_mcp_client("--db-path", ":memory:", "--read-write", "--allow-switch-databases")
     async with client:
         yield client
 
@@ -158,6 +164,14 @@ async def motherduck_saas_client(
         motherduck_token_read_scaling,
         "--saas-mode",
     )
+    async with client:
+        yield client
+
+
+@pytest.fixture
+async def secure_mode_client(test_db_path: Path) -> AsyncGenerator[Client, None]:
+    """Create a client connected to a local DuckDB in secure mode."""
+    client = get_mcp_client("--db-path", str(test_db_path), "--secure-mode")
     async with client:
         yield client
 

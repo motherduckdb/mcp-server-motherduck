@@ -240,7 +240,7 @@ class TestHttpTransport:
                     {
                         "jsonrpc": "2.0",
                         "method": "tools/call",
-                        "params": {"name": "query", "arguments": {"sql": "SELECT 1 as num"}},
+                        "params": {"name": "execute_query", "arguments": {"sql": "SELECT 1 as num"}},
                         "id": 3,
                     },
                 )
@@ -272,7 +272,7 @@ class TestHttpTransport:
                     {
                         "jsonrpc": "2.0",
                         "method": "tools/call",
-                        "params": {"name": "query", "arguments": {"sql": "SELECT 42 as answer"}},
+                        "params": {"name": "execute_query", "arguments": {"sql": "SELECT 42 as answer"}},
                         "id": 2,
                     },
                 )

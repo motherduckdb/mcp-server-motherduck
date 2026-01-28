@@ -23,7 +23,7 @@ async def test_list_tools_includes_catalog_tools(memory_client):
     tools = await memory_client.list_tools()
     tool_names = {t.name for t in tools}
 
-    assert "query" in tool_names
+    assert "execute_query" in tool_names
     assert "list_databases" in tool_names
     assert "list_tables" in tool_names
     assert "list_columns" in tool_names
@@ -64,7 +64,7 @@ async def test_list_tables_memory(memory_client):
     """list_tables returns table list for in-memory DB."""
     # Create a test table first
     await memory_client.call_tool_mcp(
-        "query", {"sql": "CREATE TABLE test_table (id INTEGER, name VARCHAR)"}
+        "execute_query", {"sql": "CREATE TABLE test_table (id INTEGER, name VARCHAR)"}
     )
 
     result = await memory_client.call_tool_mcp("list_tables", {"database": "memory"})
@@ -86,7 +86,7 @@ async def test_list_tables_with_schema_filter(memory_client):
     """list_tables respects schema filter."""
     # Create a test table in main schema
     await memory_client.call_tool_mcp(
-        "query", {"sql": "CREATE TABLE main.schema_test (id INTEGER)"}
+        "execute_query", {"sql": "CREATE TABLE main.schema_test (id INTEGER)"}
     )
 
     result = await memory_client.call_tool_mcp(
@@ -122,7 +122,7 @@ async def test_list_columns_memory(memory_client):
     """list_columns returns column info for a table."""
     # Create a test table with various column types
     await memory_client.call_tool_mcp(
-        "query",
+        "execute_query",
         {
             "sql": """
             CREATE TABLE column_test (
@@ -168,10 +168,10 @@ async def test_list_columns_view(memory_client):
     """list_columns correctly identifies views."""
     # Create a table and a view
     await memory_client.call_tool_mcp(
-        "query", {"sql": "CREATE TABLE base_table (id INTEGER, value VARCHAR)"}
+        "execute_query", {"sql": "CREATE TABLE base_table (id INTEGER, value VARCHAR)"}
     )
     await memory_client.call_tool_mcp(
-        "query", {"sql": "CREATE VIEW test_view AS SELECT * FROM base_table"}
+        "execute_query", {"sql": "CREATE VIEW test_view AS SELECT * FROM base_table"}
     )
 
     result = await memory_client.call_tool_mcp(
@@ -214,7 +214,7 @@ async def test_list_tables_nonexistent_database(memory_client):
 async def test_query_returns_json(memory_client):
     """query tool returns JSON instead of tabulate format."""
     result = await memory_client.call_tool_mcp(
-        "query", {"sql": "SELECT 1 as num, 'hello' as greeting"}
+        "execute_query", {"sql": "SELECT 1 as num, 'hello' as greeting"}
     )
     assert result.isError is False
 
@@ -234,7 +234,7 @@ async def test_query_returns_json(memory_client):
 async def test_query_error_returns_json(memory_client):
     """query errors are returned with isError=True and JSON error message."""
     result = await memory_client.call_tool_mcp(
-        "query", {"sql": "SELECT * FROM nonexistent_table_xyz"}
+        "execute_query", {"sql": "SELECT * FROM nonexistent_table_xyz"}
     )
     assert result.isError is True
 
@@ -247,7 +247,7 @@ async def test_query_error_returns_json(memory_client):
 async def test_tool_annotations_read_only_mode(readonly_client):
     """In read-only mode, query tool should have readOnlyHint=True."""
     tools = await readonly_client.list_tools()
-    query_tool = next(t for t in tools if t.name == "query")
+    query_tool = next(t for t in tools if t.name == "execute_query")
 
     # Check annotations if available
     if hasattr(query_tool, "annotations") and query_tool.annotations:

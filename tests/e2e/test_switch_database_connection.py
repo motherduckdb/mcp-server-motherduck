@@ -73,7 +73,7 @@ class TestSwitchDatabaseConnection:
 
         # Query the switched database
         query_result = await memory_client_with_switch.call_tool_mcp(
-            "query",
+            "execute_query",
             {"sql": "SELECT * FROM switched_table ORDER BY id"},
         )
         assert query_result.isError is False
@@ -96,7 +96,7 @@ class TestSwitchDatabaseConnection:
 
         # Verify first database
         result1 = await memory_client_with_switch.call_tool_mcp(
-            "query",
+            "execute_query",
             {"sql": "SELECT * FROM switched_table LIMIT 1"},
         )
         data1 = parse_json_result(result1)
@@ -113,7 +113,7 @@ class TestSwitchDatabaseConnection:
 
         # Verify second database
         result2 = await memory_client_with_switch.call_tool_mcp(
-            "query",
+            "execute_query",
             {"sql": "SELECT * FROM second_table LIMIT 1"},
         )
         data2 = parse_json_result(result2)
@@ -121,7 +121,7 @@ class TestSwitchDatabaseConnection:
 
         # First database table should not be accessible
         result3 = await memory_client_with_switch.call_tool_mcp(
-            "query",
+            "execute_query",
             {"sql": "SELECT * FROM switched_table"},
         )
         assert result3.isError is True

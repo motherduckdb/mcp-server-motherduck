@@ -53,10 +53,10 @@ async def test_motherduck_readonly_with_read_scaling_token_allowed(
         # Should work - read-scaling token with --read-only is valid
         tools = await client.list_tools()
         assert len(tools) == 4  # switch_database_connection requires --allow-switch-databases
-        assert tools[0].name == "query"
+        assert tools[0].name == "execute_query"
 
         # Should be able to query
-        result = await client.call_tool_mcp("query", {"sql": "SELECT 1 as num"})
+        result = await client.call_tool_mcp("execute_query", {"sql": "SELECT 1 as num"})
         assert result.isError is False
         text = get_result_text(result)
         assert "1" in text
@@ -78,7 +78,7 @@ async def test_motherduck_readonly_blocks_writes(motherduck_token_read_scaling: 
     async with client:
         # Try to create a table - should fail
         result = await client.call_tool_mcp(
-            "query", {"sql": "CREATE TABLE my_db.should_fail_readonly_test (id INT)"}
+            "execute_query", {"sql": "CREATE TABLE my_db.should_fail_readonly_test (id INT)"}
         )
         assert result.isError is True
         text = get_result_text(result)

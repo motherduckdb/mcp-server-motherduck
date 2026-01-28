@@ -24,7 +24,7 @@ async def test_max_rows_truncation(test_db_path):
 
     async with client:
         result = await client.call_tool_mcp(
-            "query", {"sql": "SELECT * FROM large_table ORDER BY id"}
+            "execute_query", {"sql": "SELECT * FROM large_table ORDER BY id"}
         )
         assert result.isError is False
         data = parse_json_result(result)
@@ -43,7 +43,7 @@ async def test_max_rows_no_truncation_when_under_limit(test_db_path):
 
     async with client:
         result = await client.call_tool_mcp(
-            "query",
+            "execute_query",
             {
                 "sql": "SELECT * FROM users"  # Only 3 rows
             },
@@ -63,7 +63,7 @@ async def test_max_chars_truncation(test_db_path):
     client = create_limited_client(str(test_db_path), max_chars=500)
 
     async with client:
-        result = await client.call_tool_mcp("query", {"sql": "SELECT * FROM wide_table LIMIT 10"})
+        result = await client.call_tool_mcp("execute_query", {"sql": "SELECT * FROM wide_table LIMIT 10"})
         assert result.isError is False
         text = get_result_text(result)
 
@@ -81,7 +81,7 @@ async def test_max_chars_no_truncation_when_under_limit(test_db_path):
 
     async with client:
         result = await client.call_tool_mcp(
-            "query",
+            "execute_query",
             {
                 "sql": "SELECT id, name FROM users"  # Small output
             },
@@ -100,7 +100,7 @@ async def test_both_limits_max_rows_first(test_db_path):
 
     async with client:
         result = await client.call_tool_mcp(
-            "query", {"sql": "SELECT * FROM large_table ORDER BY id"}
+            "execute_query", {"sql": "SELECT * FROM large_table ORDER BY id"}
         )
         assert result.isError is False
         data = parse_json_result(result)
@@ -116,7 +116,7 @@ async def test_limit_one_row(test_db_path):
     client = create_limited_client(str(test_db_path), max_rows=1)
 
     async with client:
-        result = await client.call_tool_mcp("query", {"sql": "SELECT * FROM users ORDER BY id"})
+        result = await client.call_tool_mcp("execute_query", {"sql": "SELECT * FROM users ORDER BY id"})
         assert result.isError is False
         data = parse_json_result(result)
 
@@ -132,7 +132,7 @@ async def test_very_small_char_limit(test_db_path):
     client = create_limited_client(str(test_db_path), max_chars=100)
 
     async with client:
-        result = await client.call_tool_mcp("query", {"sql": "SELECT * FROM users"})
+        result = await client.call_tool_mcp("execute_query", {"sql": "SELECT * FROM users"})
         assert result.isError is False
         text = get_result_text(result)
 

@@ -8,10 +8,11 @@ on:
   workflow_dispatch:
 
 jobs:
-  # Local DuckDB tests - run on all PRs
-  e2e-local:
-    name: E2E Tests (Local DuckDB)
+  e2e:
+    name: E2E Tests
     runs-on: ubuntu-latest
+    # Only run on main branch pushes or manual trigger to avoid using secrets on untrusted PRs
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
     
     steps:
       - name: Checkout code
@@ -35,37 +36,12 @@ jobs:
           MOTHERDUCK_TOKEN_READ_SCALING: ${{ secrets.MOTHERDUCK_TOKEN_READ_SCALING }}
         run: uv run python tests/e2e/fixtures/create_test_db.py
       
-      - name: Run local DuckDB tests
-        run: |
-          uv run pytest tests/e2e/test_local_duckdb.py tests/e2e/test_memory_duckdb.py tests/e2e/test_read_only.py tests/e2e/test_limits.py tests/e2e/test_timeout.py -v -m "not slow"
-  
-  # MotherDuck tests - run on main branch and manually
-  e2e-motherduck:
-    name: E2E Tests (MotherDuck)
-    runs-on: ubuntu-latest
-    # Only run on main branch pushes or manual trigger to avoid using tokens on untrusted PRs
-    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
-    
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-      
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-      
-      - name: Install uv
-        uses: astral-sh/setup-uv@v5
-        with:
-          enable-cache: true
-      
-      - name: Install dependencies
-        run: uv sync --all-extras
-      
-      - name: Run MotherDuck tests
+      - name: Run E2E tests
         env:
           MOTHERDUCK_TOKEN: ${{ secrets.MOTHERDUCK_TOKEN }}
           MOTHERDUCK_TOKEN_READ_SCALING: ${{ secrets.MOTHERDUCK_TOKEN_READ_SCALING }}
+          S3_TEST_DB_PATH: s3://md-test-bucket-user-1/test-mcp/test.duckdb
+          AWS_ACCESS_KEY_ID: ${{ secrets.E2E_USER_1_AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.E2E_USER_1_AWS_SECRET_ACCESS_KEY }}
         run: |
-          uv run pytest tests/e2e/test_motherduck.py tests/e2e/test_saas_mode.py -v
+          uv run pytest tests/e2e/ -v -m "not slow"

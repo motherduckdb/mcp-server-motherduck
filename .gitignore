@@ -4,6 +4,7 @@
 .python-version
 .mcpregistry_*
 tests/e2e/fixtures/*.duckdb
+tests/e2e/fixtures/*.duckdb.wal
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

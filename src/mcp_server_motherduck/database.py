@@ -72,10 +72,6 @@ class DatabaseClient:
 
         logger.info(f"🔌 Connecting to {self.db_type} database")
 
-        # S3 databases don't support read-only mode
-        if self.db_type == "s3" and self._read_only:
-            raise ValueError("Read-only mode is not supported for S3 databases")
-
         # Read-only handling for local DuckDB files (not in-memory)
         is_local_file = self.db_type == "duckdb" and self.db_path != ":memory:"
 

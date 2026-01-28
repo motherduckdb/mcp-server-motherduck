@@ -69,7 +69,7 @@ async def init_sql_file_client(init_sql_file):
 @pytest.mark.asyncio
 async def test_init_sql_string_creates_table(init_sql_string_client):
     """Init SQL string creates table on startup."""
-    result = await init_sql_string_client.call_tool_mcp("query", {"sql": "SELECT * FROM init_test"})
+    result = await init_sql_string_client.call_tool_mcp("execute_query", {"sql": "SELECT * FROM init_test"})
     assert result.isError is False
 
     data = parse_json_result(result)
@@ -82,7 +82,7 @@ async def test_init_sql_string_creates_table(init_sql_string_client):
 async def test_init_sql_file_creates_table(init_sql_file_client):
     """Init SQL file creates table on startup."""
     result = await init_sql_file_client.call_tool_mcp(
-        "query", {"sql": "SELECT * FROM file_init_test ORDER BY id"}
+        "execute_query", {"sql": "SELECT * FROM file_init_test ORDER BY id"}
     )
     assert result.isError is False
 
@@ -108,13 +108,13 @@ async def test_init_sql_with_multiple_statements():
     mcp = create_mcp_server(db_path=":memory:", init_sql=init_sql)
     async with Client(mcp) as client:
         # Check users table
-        result = await client.call_tool_mcp("query", {"sql": "SELECT COUNT(*) as cnt FROM users"})
+        result = await client.call_tool_mcp("execute_query", {"sql": "SELECT COUNT(*) as cnt FROM users"})
         data = parse_json_result(result)
         assert data["success"] is True
         assert data["rows"][0][0] == 2
 
         # Check orders table
-        result = await client.call_tool_mcp("query", {"sql": "SELECT COUNT(*) as cnt FROM orders"})
+        result = await client.call_tool_mcp("execute_query", {"sql": "SELECT COUNT(*) as cnt FROM orders"})
         data = parse_json_result(result)
         assert data["success"] is True
         assert data["rows"][0][0] == 3
@@ -127,7 +127,7 @@ async def test_init_sql_none_works():
 
     mcp = create_mcp_server(db_path=":memory:", init_sql=None)
     async with Client(mcp) as client:
-        result = await client.call_tool_mcp("query", {"sql": "SELECT 1 as num"})
+        result = await client.call_tool_mcp("execute_query", {"sql": "SELECT 1 as num"})
         assert result.isError is False
 
 

@@ -3,26 +3,21 @@ E2E tests for S3 DuckDB connections.
 
 Tests the MCP server with --db-path s3://...
 
-Set the S3_TEST_DB_PATH environment variable to a valid S3 DuckDB path to run these tests.
-Example: S3_TEST_DB_PATH=s3://your-bucket/path/to/database.duckdb
-
 Note: S3 databases are attached as read-only.
+Requires AWS credentials to be configured (via environment or AWS config).
 """
-
-import os
 
 import pytest
 
 from tests.e2e.conftest import get_mcp_client, get_result_text
 
+S3_TEST_DB_PATH = "s3://md-test-bucket-user-1/test-mcp/test.duckdb"
+
 
 @pytest.fixture
 def s3_db_path():
-    """Get the S3 test database path from environment."""
-    path = os.environ.get("S3_TEST_DB_PATH")
-    if not path:
-        pytest.skip("S3_TEST_DB_PATH not set - skipping S3 tests")
-    return path
+    """Return the S3 test database path."""
+    return S3_TEST_DB_PATH
 
 
 @pytest.fixture
@@ -38,13 +33,13 @@ async def test_s3_list_tools(s3_client):
     """Server exposes the query tool when connected to S3 database."""
     tools = await s3_client.list_tools()
     assert len(tools) == 4  # switch_database_connection requires --allow-switch-databases
-    assert tools[0].name == "query"
+    assert tools[0].name == "execute_query"
 
 
 @pytest.mark.asyncio
 async def test_s3_simple_select(s3_client):
     """Basic SELECT query works with S3 database."""
-    result = await s3_client.call_tool_mcp("query", {"sql": "SELECT 1 as num"})
+    result = await s3_client.call_tool_mcp("execute_query", {"sql": "SELECT 1 as num"})
     assert result.isError is False
     text = get_result_text(result)
     assert "1" in text
@@ -53,7 +48,7 @@ async def test_s3_simple_select(s3_client):
 @pytest.mark.asyncio
 async def test_s3_show_tables(s3_client):
     """Can list tables in S3 database."""
-    result = await s3_client.call_tool_mcp("query", {"sql": "SHOW TABLES"})
+    result = await s3_client.call_tool_mcp("execute_query", {"sql": "SHOW TABLES"})
     assert result.isError is False
     # Just verify it returns something (tables depend on the database)
     text = get_result_text(result)
@@ -63,7 +58,7 @@ async def test_s3_show_tables(s3_client):
 @pytest.mark.asyncio
 async def test_s3_is_readonly(s3_client):
     """S3 databases are attached as read-only, writes should fail."""
-    result = await s3_client.call_tool_mcp("query", {"sql": "CREATE TABLE should_fail_s3 (id INT)"})
+    result = await s3_client.call_tool_mcp("execute_query", {"sql": "CREATE TABLE should_fail_s3 (id INT)"})
     assert result.isError is True
     text = get_result_text(result)
     # Should fail due to read-only
@@ -74,12 +69,12 @@ async def test_s3_is_readonly(s3_client):
 async def test_s3_query_data(s3_client):
     """Can query actual data from S3 database."""
     # First get a table name
-    tables_result = await s3_client.call_tool_mcp("query", {"sql": "SHOW TABLES"})
+    tables_result = await s3_client.call_tool_mcp("execute_query", {"sql": "SHOW TABLES"})
     if tables_result.isError:
         pytest.skip("Could not list tables")
 
     # Try to count rows in the first table
     result = await s3_client.call_tool_mcp(
-        "query", {"sql": "SELECT COUNT(*) as total FROM (SHOW TABLES)"}
+        "execute_query", {"sql": "SELECT COUNT(*) as total FROM (SHOW TABLES)"}
     )
     assert result.isError is False
