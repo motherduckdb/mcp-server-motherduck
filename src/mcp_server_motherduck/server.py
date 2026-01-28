@@ -35,6 +35,7 @@ def create_mcp_server(
     query_timeout: int = -1,
     init_sql: str | None = None,
     allow_switch_databases: bool = False,
+    secure_mode: bool = False,
 ) -> FastMCP:
     """
     Create and configure the FastMCP server.
@@ -51,6 +52,7 @@ def create_mcp_server(
         query_timeout: Query timeout in seconds (-1 to disable)
         init_sql: SQL file path or string to execute on startup
         allow_switch_databases: Enable the switch_database_connection tool
+        secure_mode: Enable secure mode (restricts filesystem, extensions, locks config)
 
     Returns:
         Configured FastMCP server instance
@@ -67,6 +69,7 @@ def create_mcp_server(
         max_chars=max_chars,
         query_timeout=query_timeout,
         init_sql=init_sql,
+        secure_mode=secure_mode,
     )
 
     # Get instructions with connection context
@@ -95,11 +98,11 @@ def create_mcp_server(
 
     # Register query tool
     @mcp.tool(
-        name="query",
+        name="execute_query",
         description="Execute a SQL query on the DuckDB or MotherDuck database.",
         annotations=query_annotations,
     )
-    def query(sql: str) -> str:
+    def execute_query(sql: str) -> str:
         """
         Execute a SQL query on the DuckDB or MotherDuck database.
 

@@ -31,8 +31,8 @@ logging.basicConfig(
 )
 @click.option(
     "--db-path",
-    default="md:",
-    help="(Default: `md:`) Path to local DuckDB database file or MotherDuck database",
+    default=":memory:",
+    help="(Default: `:memory:`) Path to local DuckDB database file or MotherDuck database",
 )
 @click.option(
     "--motherduck-token",
@@ -87,6 +87,11 @@ logging.basicConfig(
     is_flag=True,
     help="Enable the switch_database_connection tool to change databases at runtime. Disabled by default.",
 )
+@click.option(
+    "--secure-mode",
+    is_flag=True,
+    help="Enable secure mode for local DuckDB: disables local filesystem access, community extensions, and locks configuration. Similar to MotherDuck's SaaS mode but for local databases.",
+)
 def main(
     port: int,
     host: str,
@@ -102,22 +107,37 @@ def main(
     query_timeout: int,
     init_sql: str | None,
     allow_switch_databases: bool,
+    secure_mode: bool,
 ) -> None:
     """MotherDuck MCP Server - Execute SQL queries via DuckDB/MotherDuck."""
     # Convert read_write flag to read_only (inverted logic)
-    # Note: in-memory databases cannot be read-only (DuckDB limitation)
-    is_memory = db_path == ":memory:"
-    if is_memory and not read_write:
-        logger.warning(
-            "⚠️  In-memory databases cannot run in read-only mode (DuckDB limitation). "
-            "Writes will be allowed."
+    read_only = not read_write
+
+    # In-memory databases require --read-write flag since read-only doesn't apply
+    if db_path == ":memory:" and read_only:
+        raise click.UsageError(
+            "In-memory databases require the --read-write flag.\n"
+            "Options:\n"
+            "  - Add --read-write to allow writes (data won't persist anyway)\n"
+            "  - Use --db-path with a file path for read-only access to a DuckDB file\n"
+            "  - Use --db-path md: with a MotherDuck token for cloud database access"
         )
-    read_only = not read_write and not is_memory
+
+    # Secure mode cannot be combined with read-write
+    if secure_mode and read_write:
+        raise click.UsageError(
+            "--secure-mode cannot be used with --read-write.\n"
+            "Secure mode is designed for read-only access to local DuckDB files."
+        )
+
+    # Secure mode: apply security restrictions for local DuckDB
+    if secure_mode:
+        logger.info("🔒 Secure mode enabled")
 
     logger.info("🦆 MotherDuck MCP Server v" + SERVER_VERSION)
     logger.info("Ready to execute SQL queries via DuckDB/MotherDuck")
-    if is_memory:
-        logger.info("Database mode: read-write (in-memory)")
+    if db_path == ":memory:":
+        logger.info("Database mode: in-memory (read-write)")
     else:
         mode_str = "read-write" if read_write else "read-only"
         if not read_write and not ephemeral_connections:
@@ -168,6 +188,7 @@ def main(
         query_timeout=query_timeout,
         init_sql=init_sql,
         allow_switch_databases=allow_switch_databases,
+        secure_mode=secure_mode,
     )
 
     # Run the server with the appropriate transport

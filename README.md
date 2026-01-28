@@ -29,7 +29,7 @@ A local MCP server implementation that interacts with DuckDB and MotherDuck data
 
 The server provides the following tools:
 
-- `query`: Execute a SQL query on the DuckDB or MotherDuck database
+- `execute_query`: Execute a SQL query on the DuckDB or MotherDuck database
   - **Inputs**:
     - `sql` (string, required): The SQL query to execute
   - **Output**: JSON with columns, columnTypes, rows, and rowCount
@@ -72,11 +72,12 @@ The MCP server supports the following parameters:
 | `--transport` | Choice | `stdio` | Transport type. Options: `stdio`, `http`. (`sse` and `stream` are deprecated aliases)                                                                                                                                                                          |
 | `--port` | Integer | `8000` | Port to listen on for HTTP transport mode                                                                                                                                                                                                                      |
 | `--host` | String | `127.0.0.1` | Host to bind the MCP server for HTTP transport mode                                                                                                                                                                                                            |
-| `--db-path` | String | `md:` | Path to local DuckDB database file, MotherDuck database, or S3 URL (e.g., `s3://bucket/path/to/db.duckdb`)                                                                                                                                                     |
+| `--db-path` | String | `:memory:` | Path to local DuckDB database file, MotherDuck database (`md:`), or S3 URL (e.g., `s3://bucket/path/to/db.duckdb`)                                                                                                                                                     |
 | `--motherduck-token` | String | `None` | Access token to use for MotherDuck database connections (uses `motherduck_token` env var by default)                                                                                                                                                           |
 | `--home-dir` | String | `None` | Home directory for DuckDB (uses `HOME` env var by default)                                                                                                                                                                                                     |
 | `--read-write` | Flag | `False` | Enable write access to the database. By default, the server runs in read-only mode for local DuckDB files and MotherDuck.                                                                   |
-| `--saas-mode` | Flag | `False` | Flag for connecting to MotherDuck in [SaaS mode](https://motherduck.com/docs/key-tasks/authenticating-and-connecting-to-motherduck/authenticating-to-motherduck/#authentication-using-saas-mode). (disables filesystem and write permissions for local DuckDB) |
+| `--saas-mode` | Flag | `False` | **For MotherDuck:** Enable [SaaS mode](https://motherduck.com/docs/key-tasks/authenticating-and-connecting-to-motherduck/authenticating-to-motherduck/#authentication-using-saas-mode) which disables local filesystem access for enhanced security. |
+| `--secure-mode` | Flag | `False` | **For local DuckDB:** Enable secure mode which disables local filesystem access, community extensions, and locks configuration. See [DuckDB security docs](https://duckdb.org/docs/stable/operations_manual/securing_duckdb/overview). |
 | `--init-sql` | String | `None` | SQL file path or SQL string to execute on startup for database initialization.                                                                                                                                                          |
 | `--ephemeral-connections` | Flag | `True` | Use temporary connections for read-only local DuckDB files, creating a new connection for each query. This keeps the file unlocked so other processes can write to it.                                                  |
 | `--allow-switch-databases` | Flag | `False` | Enable the `switch_database_connection` tool to change databases at runtime. Disabled by default.                                                                                                          |
@@ -317,7 +318,7 @@ Refer to the [Read Scaling documentation](https://motherduck.com/docs/key-tasks/
 
 To connect to a local DuckDB, instead of using the MotherDuck token, specify the path to your local DuckDB database file or use `:memory:` for an in-memory database.
 
-In-memory database:
+In-memory database (requires `--read-write` since data doesn't persist):
 
 ```json
 {
@@ -327,7 +328,8 @@ In-memory database:
       "args": [
         "mcp-server-motherduck",
         "--db-path",
-        ":memory:"
+        ":memory:",
+        "--read-write"
       ]
     }
   }
