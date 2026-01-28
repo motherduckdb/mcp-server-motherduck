@@ -201,17 +201,17 @@ def create_mcp_server(
 
         @mcp.tool(
             name="switch_database_connection",
-            description="Switch to a different database connection. For local files, use absolute paths only. The new connection respects the server's read-only/read-write mode. For local files, the file must exist unless create_if_missing=True (requires read-write mode).",
+            description="Switch to a different database connection. For local files, use absolute paths only. The new connection respects the server's read-only/read-write mode. For local files, the file must exist unless create_if_not_exists=True (requires read-write mode).",
             annotations=catalog_annotations,
         )
-        def switch_database_connection(path: str, create_if_missing: bool = False) -> str:
+        def switch_database_connection(path: str, create_if_not_exists: bool = False) -> str:
             """
             Switch to a different primary database.
 
             Args:
                 path: Database path. For local files, must be an absolute path.
                       Also accepts :memory:, md:database_name, or s3:// paths.
-                create_if_missing: If True, create the database file if it doesn't exist.
+                create_if_not_exists: If True, create the database file if it doesn't exist.
                                    Only works in read-write mode.
 
             Returns:
@@ -221,7 +221,7 @@ def create_mcp_server(
                 path=path,
                 db_client=db_client,
                 server_read_only=server_read_only_mode,
-                create_if_missing=create_if_missing,
+                create_if_not_exists=create_if_not_exists,
             )
             return json.dumps(result, indent=2, default=str)
 

@@ -106,7 +106,7 @@ claude mcp remove duckdb # Remove a server
 
 **Cursor:**
 
-[<img src="https://cursor.com/deeplink/mcp-install-dark.svg" alt="Install in Cursor">](https://cursor.com/en/install-mcp?name=DuckDB&config=eyJjb21tYW5kIjoidXZ4IG1jcC1zZXJ2ZXItbW90aGVyZHVjayAtLWRiLXBhdGggOm1lbW9yeToiLCJlbnYiOnsibW90aGVyZHVja190b2tlbiI6IiJ9fQ%3D%3D)
+[<img src="https://cursor.com/deeplink/mcp-install-dark.svg" alt="Install in Cursor">](https://cursor.com/en/install-mcp?name=DuckDB&config=eyJjb21tYW5kIjoidXZ4IG1jcC1zZXJ2ZXItbW90aGVyZHVjayAtLWRiLXBhdGggOm1lbW9yeTogLS1yZWFkLXdyaXRlIC0tYWxsb3ctc3dpdGNoLWRhdGFiYXNlcyIsImVudiI6e319)
 
 </details>
 
@@ -125,7 +125,7 @@ Any MCP-compatible client can use this server. Add the JSON configuration from Q
 | `list_databases` | List all databases (useful for MotherDuck or multiple attached DBs) | - | - |
 | `list_tables` | List tables and views | - | `database`, `schema` |
 | `list_columns` | List columns of a table/view | `table` | `database`, `schema` |
-| `switch_database_connection`* | Switch to different database | `path` | `create_if_missing` |
+| `switch_database_connection`* | Switch to different database | `path` | `create_if_not_exists` |
 
 *Requires `--allow-switch-databases` flag
 

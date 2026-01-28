@@ -176,7 +176,7 @@ def get_instructions(
             "- You can switch to different databases using switch_database_connection"
         )
         context_lines.append(
-            "- To create a new database file, use create_if_missing=True (only in read-write mode)"
+            "- To create a new database file, use create_if_not_exists=True (only in read-write mode)"
         )
     elif allow_switch_databases and read_only:
         context_lines.append(

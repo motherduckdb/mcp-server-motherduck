@@ -49,7 +49,7 @@ def switch_database_connection(
     path: str,
     db_client: Any,
     server_read_only: bool = False,
-    create_if_missing: bool = False,
+    create_if_not_exists: bool = False,
 ) -> dict[str, Any]:
     """
     Switch to a different primary database.
@@ -59,7 +59,7 @@ def switch_database_connection(
               Also accepts :memory:, md:database_name, or s3:// paths.
         db_client: DatabaseClient instance (injected by server)
         server_read_only: Server's global read-only setting (injected by server)
-        create_if_missing: If True, create the database file if it doesn't exist.
+        create_if_not_exists: If True, create the database file if it doesn't exist.
                           Only allowed when server is in read-write mode.
 
     Returns:
@@ -79,10 +79,10 @@ def switch_database_connection(
         file_exists = os.path.exists(path)
 
         if not file_exists:
-            if not create_if_missing:
+            if not create_if_not_exists:
                 return {
                     "success": False,
-                    "error": f"Database file does not exist: {path}. Set create_if_missing=True to create a new database.",
+                    "error": f"Database file does not exist: {path}. Set create_if_not_exists=True to create a new database.",
                     "errorType": "FileNotFoundError",
                 }
 

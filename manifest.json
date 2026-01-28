@@ -3,8 +3,8 @@
   "name": "mcp-server-motherduck",
   "display_name": "Local DuckDB",
   "version": "0.8.1",
-  "description": "A local MCP server for DuckDB and MotherDuck databases, providing SQL analytics capabilities to AI Assistants and IDEs.",
-  "long_description": "Connect AI assistants to your data using DuckDB's powerful analytical SQL engine. Supports local DuckDB files, in-memory databases, S3-hosted databases, and MotherDuck cloud. Features include executing SQL queries, browsing database catalogs, read-only mode by default, and SaaS mode for MotherDuck.",
+  "description": "SQL analytics and data engineering for AI Assistants and IDEs.",
+  "long_description": "Connect AI assistants to your data using DuckDB's powerful analytical SQL engine. Supports connecting to local DuckDB files, in-memory databases, S3-hosted databases, and MotherDuck. Allows executing SQL read- and write-queries, browsing database catalogs, and switching between different database connections on-the-fly.",
   "author": {
     "name": "MotherDuck",
     "url": "https://motherduck.com"
