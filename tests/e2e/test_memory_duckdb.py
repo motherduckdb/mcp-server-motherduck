@@ -15,7 +15,9 @@ async def test_list_tools(memory_client):
     tools = await memory_client.list_tools()
     tool_names = {t.name for t in tools}
     assert "execute_query" in tool_names
-    assert len(tools) == 4  # query, list_databases, list_tables, list_columns (switch_database_connection requires --allow-switch-databases)
+    assert (
+        len(tools) == 3
+    )  # execute_query, list_tables, list_columns (list_databases requires --list-databases)
 
 
 @pytest.mark.asyncio
@@ -43,7 +45,9 @@ async def test_create_and_query_table(memory_client):
     assert result.isError is False
 
     # Query data
-    result = await memory_client.call_tool_mcp("execute_query", {"sql": "SELECT * FROM test ORDER BY id"})
+    result = await memory_client.call_tool_mcp(
+        "execute_query", {"sql": "SELECT * FROM test ORDER BY id"}
+    )
     assert result.isError is False
     text = get_result_text(result)
     assert "Alice" in text

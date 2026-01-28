@@ -22,8 +22,8 @@ if os.environ.get("E2E_USER_1_AWS_ACCESS_KEY_ID"):
 if os.environ.get("E2E_USER_1_AWS_SECRET_ACCESS_KEY"):
     os.environ["AWS_SECRET_ACCESS_KEY"] = os.environ["E2E_USER_1_AWS_SECRET_ACCESS_KEY"]
 
-from fastmcp import Client
-from fastmcp.client.transports import StdioTransport
+from fastmcp import Client  # noqa: E402
+from fastmcp.client.transports import StdioTransport  # noqa: E402
 
 # Paths
 FIXTURES_DIR = Path(__file__).parent / "fixtures"
@@ -115,9 +115,27 @@ async def local_client(test_db_path: Path) -> AsyncGenerator[Client, None]:
 
 
 @pytest.fixture
+async def local_client_with_list_databases(test_db_path: Path) -> AsyncGenerator[Client, None]:
+    """Create a client connected to a local DuckDB file with list_databases enabled."""
+    client = get_mcp_client(
+        "--db-path", str(test_db_path), "--read-write", "--enable-list-databases"
+    )
+    async with client:
+        yield client
+
+
+@pytest.fixture
 async def memory_client() -> AsyncGenerator[Client, None]:
     """Create a client connected to an in-memory DuckDB (always writable)."""
     client = get_mcp_client("--db-path", ":memory:", "--read-write")
+    async with client:
+        yield client
+
+
+@pytest.fixture
+async def memory_client_with_list_databases() -> AsyncGenerator[Client, None]:
+    """Create a client connected to an in-memory DuckDB with list_databases enabled."""
+    client = get_mcp_client("--db-path", ":memory:", "--read-write", "--enable-list-databases")
     async with client:
         yield client
 

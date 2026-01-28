@@ -26,17 +26,11 @@ def list_databases(db_client: Any) -> dict[str, Any]:
             _, _, rows = db_client.execute_raw(
                 "SELECT alias, type FROM MD_ALL_DATABASES() WHERE alias IS NOT NULL"
             )
-            databases = [
-                {"name": row[0], "type": row[1]} for row in rows if row[0]
-            ]
+            databases = [{"name": row[0], "type": row[1]} for row in rows if row[0]]
         except Exception:
             # Fall back to DuckDB system function (works for local DuckDB)
-            _, _, rows = db_client.execute_raw(
-                "SELECT database_name, type FROM duckdb_databases()"
-            )
-            databases = [
-                {"name": row[0], "type": row[1]} for row in rows if row[0]
-            ]
+            _, _, rows = db_client.execute_raw("SELECT database_name, type FROM duckdb_databases()")
+            databases = [{"name": row[0], "type": row[1]} for row in rows if row[0]]
 
         return {
             "success": True,

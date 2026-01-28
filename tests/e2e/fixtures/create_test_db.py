@@ -94,9 +94,9 @@ def create_test_database():
         # 3. Create a large table for limit/pagination tests
         print("  - Creating large_table for limit tests...")
         local_conn.execute("""
-            CREATE TABLE large_table AS 
-            SELECT 
-                range as id, 
+            CREATE TABLE large_table AS
+            SELECT
+                range as id,
                 'row_' || range as data,
                 random() as random_value
             FROM range(10000)
@@ -107,7 +107,7 @@ def create_test_database():
         print("  - Creating wide_table for char limit tests...")
         local_conn.execute("""
             CREATE TABLE wide_table AS
-            SELECT 
+            SELECT
                 range as id,
                 repeat('x', 1000) as wide_column_1,
                 repeat('y', 1000) as wide_column_2,

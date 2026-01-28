@@ -34,7 +34,7 @@ The server provides the following tools:
     - `sql` (string, required): The SQL query to execute
   - **Output**: JSON with columns, columnTypes, rows, and rowCount
 
-- `list_databases`: List all databases available in the connection
+- `list_databases`: List all databases available in the connection *(auto-enabled for MotherDuck, requires `--enable-list-databases` flag for local DuckDB)*
   - **Output**: JSON with database names and types
 
 - `list_tables`: List all tables and views in a database
@@ -81,6 +81,7 @@ The MCP server supports the following parameters:
 | `--init-sql` | String | `None` | SQL file path or SQL string to execute on startup for database initialization.                                                                                                                                                          |
 | `--ephemeral-connections` | Flag | `True` | Use temporary connections for read-only local DuckDB files, creating a new connection for each query. This keeps the file unlocked so other processes can write to it.                                                  |
 | `--allow-switch-databases` | Flag | `False` | Enable the `switch_database_connection` tool to change databases at runtime. Disabled by default.                                                                                                          |
+| `--enable-list-databases` | Flag | `False` | Enable the `list_databases` tool. Auto-enabled for MotherDuck connections, disabled by default for local DuckDB.                                                                                                          |
 | `--max-rows` | Integer | `1024` | Maximum number of rows to return from queries.                                                                                                                                                                    |
 | `--max-chars` | Integer | `50000` | Maximum number of characters in query results.                                                                                                                                                          |
 | `--query-timeout` | Integer | `-1` | Query execution timeout in seconds. Set to -1 to disable timeout (default).                                                                                                                                                          |

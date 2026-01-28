@@ -32,7 +32,9 @@ async def s3_client(s3_db_path: str):
 async def test_s3_list_tools(s3_client):
     """Server exposes the query tool when connected to S3 database."""
     tools = await s3_client.list_tools()
-    assert len(tools) == 4  # switch_database_connection requires --allow-switch-databases
+    assert (
+        len(tools) == 3
+    )  # execute_query, list_tables, list_columns (list_databases requires --list-databases)
     assert tools[0].name == "execute_query"
 
 
@@ -58,7 +60,9 @@ async def test_s3_show_tables(s3_client):
 @pytest.mark.asyncio
 async def test_s3_is_readonly(s3_client):
     """S3 databases are attached as read-only, writes should fail."""
-    result = await s3_client.call_tool_mcp("execute_query", {"sql": "CREATE TABLE should_fail_s3 (id INT)"})
+    result = await s3_client.call_tool_mcp(
+        "execute_query", {"sql": "CREATE TABLE should_fail_s3 (id INT)"}
+    )
     assert result.isError is True
     text = get_result_text(result)
     # Should fail due to read-only

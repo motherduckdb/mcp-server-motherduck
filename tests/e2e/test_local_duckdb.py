@@ -15,10 +15,11 @@ async def test_list_tools(local_client):
     tools = await local_client.list_tools()
     tool_names = {t.name for t in tools}
     assert "execute_query" in tool_names
-    assert "list_databases" in tool_names
     assert "list_tables" in tool_names
     assert "list_columns" in tool_names
-    assert len(tools) == 4  # switch_database_connection requires --allow-switch-databases
+    assert (
+        len(tools) == 3
+    )  # execute_query, list_tables, list_columns (list_databases requires --list-databases)
 
 
 @pytest.mark.asyncio
@@ -33,7 +34,9 @@ async def test_simple_select(local_client):
 @pytest.mark.asyncio
 async def test_query_users_table(local_client):
     """Can query the users table from test database."""
-    result = await local_client.call_tool_mcp("execute_query", {"sql": "SELECT * FROM users ORDER BY id"})
+    result = await local_client.call_tool_mcp(
+        "execute_query", {"sql": "SELECT * FROM users ORDER BY id"}
+    )
     assert result.isError is False
     text = get_result_text(result)
     assert "Alice" in text

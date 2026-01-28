@@ -28,7 +28,7 @@ def _is_read_scaling_connection(conn: duckdb.DuckDBPyConnection) -> bool:
         if result and result[0]:
             duckling_id = result[0]
             # Check if duckling ID ends with .rs.{number}
-            return bool(re.search(r'\.rs\.\d+$', duckling_id))
+            return bool(re.search(r"\.rs\.\d+$", duckling_id))
         return False
     except Exception:
         return False
@@ -81,9 +81,7 @@ class DatabaseClient:
             try:
                 conn = duckdb.connect(
                     self.db_path,
-                    config={
-                        "custom_user_agent": f"mcp-server-motherduck/{SERVER_VERSION}"
-                    },
+                    config={"custom_user_agent": f"mcp-server-motherduck/{SERVER_VERSION}"},
                     read_only=self._read_only,
                 )
                 conn.execute("SELECT 1")
@@ -106,7 +104,7 @@ class DatabaseClient:
         # Check if this is an S3 path
         if self.db_type == "s3":
             # For S3, we need to create an in-memory connection and attach the S3 database
-            conn = duckdb.connect(':memory:')
+            conn = duckdb.connect(":memory:")
 
             # Install and load the httpfs extension for S3 support
             import io
@@ -121,11 +119,10 @@ class DatabaseClient:
                 conn.execute("LOAD httpfs;")
 
             # Configure S3 credentials from environment variables using CREATE SECRET
-            aws_access_key = os.environ.get('AWS_ACCESS_KEY_ID')
-            aws_secret_key = os.environ.get('AWS_SECRET_ACCESS_KEY')
-            aws_session_token = os.environ.get('AWS_SESSION_TOKEN')
-            aws_region = os.environ.get('AWS_DEFAULT_REGION', 'us-east-1')
-
+            aws_access_key = os.environ.get("AWS_ACCESS_KEY_ID")
+            aws_secret_key = os.environ.get("AWS_SECRET_ACCESS_KEY")
+            aws_session_token = os.environ.get("AWS_SESSION_TOKEN")
+            aws_region = os.environ.get("AWS_DEFAULT_REGION", "us-east-1")
 
             if aws_access_key and aws_secret_key and not aws_session_token:
                 # Use CREATE SECRET for better credential management
@@ -155,7 +152,9 @@ class DatabaseClient:
                 conn.execute(f"ATTACH '{self.db_path}' AS s3db (READ_ONLY);")
                 # Use the attached database
                 conn.execute("USE s3db;")
-                logger.info(f"✅ Successfully connected to {self.db_type} database (attached as read-only)")
+                logger.info(
+                    f"✅ Successfully connected to {self.db_type} database (attached as read-only)"
+                )
             except Exception as e:
                 logger.error(f"Failed to attach S3 database: {e}")
                 # If the database doesn't exist and we're not in read-only mode, try to create it
@@ -266,9 +265,7 @@ class DatabaseClient:
                         "motherduck",
                     )
             elif os.getenv("motherduck_token"):
-                logger.info(
-                    "Using MotherDuck token from env to connect to database `md:`"
-                )
+                logger.info("Using MotherDuck token from env to connect to database `md:`")
                 return (
                     f"{db_path}?motherduck_token={os.getenv('motherduck_token')}",
                     "motherduck",
@@ -300,13 +297,9 @@ class DatabaseClient:
         try:
             # Execute with or without timeout
             if self._query_timeout > 0:
-                columns, column_types, rows, has_more_rows = self._execute_with_timeout(
-                    conn, query
-                )
+                columns, column_types, rows, has_more_rows = self._execute_with_timeout(conn, query)
             else:
-                columns, column_types, rows, has_more_rows = self._execute_direct(
-                    conn, query
-                )
+                columns, column_types, rows, has_more_rows = self._execute_direct(conn, query)
 
             # Build result object
             result: dict[str, Any] = {
@@ -321,8 +314,7 @@ class DatabaseClient:
             if has_more_rows:
                 result["truncated"] = True
                 result["warning"] = (
-                    f"Results limited to {self._max_rows:,} rows. "
-                    "Query returned more data."
+                    f"Results limited to {self._max_rows:,} rows. " "Query returned more data."
                 )
 
             # Check character limit on JSON output
@@ -402,9 +394,7 @@ class DatabaseClient:
                 "errorType": type(e).__name__,
             }
 
-    def execute_raw(
-        self, query: str
-    ) -> tuple[list[str], list[str], list[list[Any]]]:
+    def execute_raw(self, query: str) -> tuple[list[str], list[str], list[list[Any]]]:
         """
         Execute a query and return raw results (columns, types, rows).
         Used by catalog tools that need custom result formatting.

@@ -35,6 +35,7 @@ def create_mcp_server(
     query_timeout: int = -1,
     init_sql: str | None = None,
     allow_switch_databases: bool = False,
+    list_databases: bool = False,
     secure_mode: bool = False,
 ) -> FastMCP:
     """
@@ -52,6 +53,7 @@ def create_mcp_server(
         query_timeout: Query timeout in seconds (-1 to disable)
         init_sql: SQL file path or string to execute on startup
         allow_switch_databases: Enable the switch_database_connection tool
+        list_databases: Enable the list_databases tool
         secure_mode: Enable secure mode (restricts filesystem, extensions, locks config)
 
     Returns:
@@ -73,7 +75,14 @@ def create_mcp_server(
     )
 
     # Get instructions with connection context
-    instructions = get_instructions(read_only=read_only, saas_mode=saas_mode)
+    instructions = get_instructions(
+        read_only=read_only,
+        saas_mode=saas_mode,
+        secure_mode=secure_mode,
+        db_path=db_path,
+        allow_switch_databases=allow_switch_databases,
+        list_databases_enabled=list_databases,
+    )
 
     # Create FastMCP server
     mcp = FastMCP(
@@ -121,21 +130,23 @@ def create_mcp_server(
             raise ValueError(json.dumps(result, indent=2, default=str))
         return json.dumps(result, indent=2, default=str)
 
-    # Register list_databases tool
-    @mcp.tool(
-        name="list_databases",
-        description="List all databases with their names and types.",
-        annotations=catalog_annotations,
-    )
-    def list_databases() -> str:
-        """
-        List all databases available in the connection.
+    # Conditionally register list_databases tool
+    if list_databases:
 
-        Returns:
-            JSON string with database list
-        """
-        result = list_databases_fn(db_client)
-        return json.dumps(result, indent=2, default=str)
+        @mcp.tool(
+            name="list_databases",
+            description="List all databases with their names and types.",
+            annotations=catalog_annotations,
+        )
+        def list_databases_tool() -> str:
+            """
+            List all databases available in the connection.
+
+            Returns:
+                JSON string with database list
+            """
+            result = list_databases_fn(db_client)
+            return json.dumps(result, indent=2, default=str)
 
     # Register list_tables tool
     @mcp.tool(
@@ -185,16 +196,18 @@ def create_mcp_server(
 
         @mcp.tool(
             name="switch_database_connection",
-            description="Switch to a different database connection. For local files, use absolute paths only. The new connection respects the server's read-only/read-write mode.",
+            description="Switch to a different database connection. For local files, use absolute paths only. The new connection respects the server's read-only/read-write mode. For local files, the file must exist unless create_if_missing=True (requires read-write mode).",
             annotations=catalog_annotations,
         )
-        def switch_database_connection(path: str) -> str:
+        def switch_database_connection(path: str, create_if_missing: bool = False) -> str:
             """
             Switch to a different primary database.
 
             Args:
                 path: Database path. For local files, must be an absolute path.
                       Also accepts :memory:, md:database_name, or s3:// paths.
+                create_if_missing: If True, create the database file if it doesn't exist.
+                                   Only works in read-write mode.
 
             Returns:
                 JSON string with result
@@ -203,6 +216,7 @@ def create_mcp_server(
                 path=path,
                 db_client=db_client,
                 server_read_only=server_read_only_mode,
+                create_if_missing=create_if_missing,
             )
             return json.dumps(result, indent=2, default=str)
 

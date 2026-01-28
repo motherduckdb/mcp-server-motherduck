@@ -85,10 +85,10 @@ async def test_aggregate_queries_work(motherduck_saas_client):
         "execute_query",
         {
             "sql": """
-            SELECT type, COUNT(*) as cnt 
-            FROM sample_data.hn.hacker_news 
-            GROUP BY type 
-            ORDER BY cnt DESC 
+            SELECT type, COUNT(*) as cnt
+            FROM sample_data.hn.hacker_news
+            GROUP BY type
+            ORDER BY cnt DESC
             LIMIT 3
         """
         },
@@ -106,7 +106,7 @@ async def test_complex_analytical_query(motherduck_saas_client):
         {
             "sql": """
             WITH movie_stats AS (
-                SELECT 
+                SELECT
                     COUNT(*) as total_movies
                 FROM sample_data.kaggle.movies
             )

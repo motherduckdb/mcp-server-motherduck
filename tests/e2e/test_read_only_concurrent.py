@@ -35,7 +35,9 @@ async def test_concurrent_readonly_connections(test_db_path):
 
     async with client1, client2:
         # Both clients should be able to query simultaneously
-        result1 = await client1.call_tool_mcp("execute_query", {"sql": "SELECT COUNT(*) as cnt FROM users"})
+        result1 = await client1.call_tool_mcp(
+            "execute_query", {"sql": "SELECT COUNT(*) as cnt FROM users"}
+        )
         result2 = await client2.call_tool_mcp(
             "execute_query", {"sql": "SELECT COUNT(*) as cnt FROM movies"}
         )
@@ -63,9 +65,15 @@ async def test_concurrent_readonly_parallel_queries(test_db_path):
     async with client1, client2, client3:
         # Run queries in parallel
         results = await asyncio.gather(
-            client1.call_tool_mcp("execute_query", {"sql": "SELECT * FROM users ORDER BY id LIMIT 1"}),
-            client2.call_tool_mcp("execute_query", {"sql": "SELECT * FROM users ORDER BY id LIMIT 1"}),
-            client3.call_tool_mcp("execute_query", {"sql": "SELECT * FROM users ORDER BY id LIMIT 1"}),
+            client1.call_tool_mcp(
+                "execute_query", {"sql": "SELECT * FROM users ORDER BY id LIMIT 1"}
+            ),
+            client2.call_tool_mcp(
+                "execute_query", {"sql": "SELECT * FROM users ORDER BY id LIMIT 1"}
+            ),
+            client3.call_tool_mcp(
+                "execute_query", {"sql": "SELECT * FROM users ORDER BY id LIMIT 1"}
+            ),
         )
 
         # All should succeed

@@ -15,9 +15,7 @@ from .server import create_mcp_server
 __version__ = SERVER_VERSION
 
 logger = logging.getLogger("mcp_server_motherduck")
-logging.basicConfig(
-    level=logging.INFO, format="[motherduck] %(levelname)s - %(message)s"
-)
+logging.basicConfig(level=logging.INFO, format="[motherduck] %(levelname)s - %(message)s")
 
 
 @click.command()
@@ -88,6 +86,12 @@ logging.basicConfig(
     help="Enable the switch_database_connection tool to change databases at runtime. Disabled by default.",
 )
 @click.option(
+    "--enable-list-databases",
+    is_flag=True,
+    default=False,
+    help="Enable the list_databases tool. Auto-enabled for MotherDuck connections, disabled by default for local DuckDB.",
+)
+@click.option(
     "--secure-mode",
     is_flag=True,
     help="Enable secure mode for local DuckDB: disables local filesystem access, community extensions, and locks configuration. Similar to MotherDuck's SaaS mode but for local databases.",
@@ -107,6 +111,7 @@ def main(
     query_timeout: int,
     init_sql: str | None,
     allow_switch_databases: bool,
+    enable_list_databases: bool,
     secure_mode: bool,
 ) -> None:
     """MotherDuck MCP Server - Execute SQL queries via DuckDB/MotherDuck."""
@@ -134,6 +139,10 @@ def main(
     if secure_mode:
         logger.info("🔒 Secure mode enabled")
 
+    # Auto-enable list_databases for MotherDuck
+    is_motherduck = db_path.startswith("md:")
+    list_databases = enable_list_databases or is_motherduck
+
     logger.info("🦆 MotherDuck MCP Server v" + SERVER_VERSION)
     logger.info("Ready to execute SQL queries via DuckDB/MotherDuck")
     if db_path == ":memory:":
@@ -152,6 +161,8 @@ def main(
         logger.info("Init SQL: configured")
     if allow_switch_databases:
         logger.info("Switch databases: enabled")
+    if list_databases:
+        logger.info("List databases: enabled")
 
     # Handle deprecated transport aliases
     if transport == "stream":
@@ -160,9 +171,7 @@ def main(
             DeprecationWarning,
             stacklevel=2,
         )
-        logger.warning(
-            "⚠️  '--transport stream' is deprecated. Use '--transport http' instead."
-        )
+        logger.warning("⚠️  '--transport stream' is deprecated. Use '--transport http' instead.")
         transport = "http"
     elif transport == "sse":
         warnings.warn(
@@ -170,9 +179,7 @@ def main(
             DeprecationWarning,
             stacklevel=2,
         )
-        logger.warning(
-            "⚠️  '--transport sse' is deprecated. Use '--transport http' instead."
-        )
+        logger.warning("⚠️  '--transport sse' is deprecated. Use '--transport http' instead.")
         transport = "http"
 
     # Create the FastMCP server
@@ -188,6 +195,7 @@ def main(
         query_timeout=query_timeout,
         init_sql=init_sql,
         allow_switch_databases=allow_switch_databases,
+        list_databases=list_databases,
         secure_mode=secure_mode,
     )
 

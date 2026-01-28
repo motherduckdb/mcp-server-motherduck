@@ -47,7 +47,9 @@ class TestSwitchDatabaseConnection:
     """Test switch_database_connection tool."""
 
     @pytest.mark.asyncio
-    async def test_switch_database_connection_success(self, memory_client_with_switch, temp_duckdb_file):
+    async def test_switch_database_connection_success(
+        self, memory_client_with_switch, temp_duckdb_file
+    ):
         """Can switch to a local DuckDB file."""
         result = await memory_client_with_switch.call_tool_mcp(
             "switch_database_connection",

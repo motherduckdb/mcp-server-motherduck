@@ -46,10 +46,10 @@ async def test_query_hacker_news(motherduck_client):
         "execute_query",
         {
             "sql": """
-            SELECT type, COUNT(*) as cnt 
-            FROM sample_data.hn.hacker_news 
-            GROUP BY type 
-            ORDER BY cnt DESC 
+            SELECT type, COUNT(*) as cnt
+            FROM sample_data.hn.hacker_news
+            GROUP BY type
+            ORDER BY cnt DESC
             LIMIT 5
         """
         },
@@ -85,12 +85,15 @@ async def test_create_table_in_my_db(motherduck_client):
     table_name = f"e2e_test_{int(time.time())}"
 
     result = await motherduck_client.call_tool_mcp(
-        "execute_query", {"execute_query": f"CREATE TABLE IF NOT EXISTS {table_name} (id INT, data VARCHAR)"}
+        "execute_query",
+        {"execute_query": f"CREATE TABLE IF NOT EXISTS {table_name} (id INT, data VARCHAR)"},
     )
     assert result.isError is False
 
     # Clean up
-    await motherduck_client.call_tool_mcp("execute_query", {"execute_query": f"DROP TABLE IF EXISTS {table_name}"})
+    await motherduck_client.call_tool_mcp(
+        "execute_query", {"execute_query": f"DROP TABLE IF EXISTS {table_name}"}
+    )
 
 
 @pytest.mark.asyncio
@@ -100,7 +103,7 @@ async def test_cross_database_query(motherduck_client):
         "execute_query",
         {
             "sql": """
-            SELECT 
+            SELECT
                 (SELECT COUNT(*) FROM sample_data.kaggle.movies) as movies_count,
                 (SELECT COUNT(*) FROM sample_data.hn.hacker_news LIMIT 1) as hn_exists
         """

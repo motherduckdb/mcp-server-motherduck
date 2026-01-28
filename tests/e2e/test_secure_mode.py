@@ -18,15 +18,15 @@ async def test_list_tools(secure_mode_client):
     tools = await secure_mode_client.list_tools()
     tool_names = {t.name for t in tools}
     assert "execute_query" in tool_names
-    assert len(tools) == 4
+    assert (
+        len(tools) == 3
+    )  # execute_query, list_tables, list_columns (list_databases requires --list-databases)
 
 
 @pytest.mark.asyncio
 async def test_simple_select(secure_mode_client):
     """Basic SELECT query works in secure mode."""
-    result = await secure_mode_client.call_tool_mcp(
-        "execute_query", {"sql": "SELECT 1 as num"}
-    )
+    result = await secure_mode_client.call_tool_mcp("execute_query", {"sql": "SELECT 1 as num"})
     assert result.isError is False
     text = get_result_text(result)
     assert "1" in text
@@ -55,9 +55,7 @@ async def test_community_extension_blocked(secure_mode_client):
 @pytest.mark.asyncio
 async def test_config_change_blocked(secure_mode_client):
     """Configuration changes are blocked in secure mode."""
-    result = await secure_mode_client.call_tool_mcp(
-        "execute_query", {"sql": "SET threads = 1"}
-    )
+    result = await secure_mode_client.call_tool_mcp("execute_query", {"sql": "SET threads = 1"})
     assert result.isError is True
     text = get_result_text(result)
     assert "lock" in text.lower() or "cannot" in text.lower()

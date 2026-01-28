@@ -240,7 +240,10 @@ class TestHttpTransport:
                     {
                         "jsonrpc": "2.0",
                         "method": "tools/call",
-                        "params": {"name": "execute_query", "arguments": {"sql": "SELECT 1 as num"}},
+                        "params": {
+                            "name": "execute_query",
+                            "arguments": {"sql": "SELECT 1 as num"},
+                        },
                         "id": 3,
                     },
                 )
@@ -272,7 +275,10 @@ class TestHttpTransport:
                     {
                         "jsonrpc": "2.0",
                         "method": "tools/call",
-                        "params": {"name": "execute_query", "arguments": {"sql": "SELECT 42 as answer"}},
+                        "params": {
+                            "name": "execute_query",
+                            "arguments": {"sql": "SELECT 42 as answer"},
+                        },
                         "id": 2,
                     },
                 )
@@ -293,7 +299,7 @@ class TestHostConfiguration:
         """Server binds to specified host."""
         port = find_free_port()
         # Use 0.0.0.0 to bind to all interfaces, connect via 127.0.0.1
-        with MCPHttpServer("http", memory_db, port, host="0.0.0.0") as server:
+        with MCPHttpServer("http", memory_db, port, host="0.0.0.0") as _server:
             # Override base_url to connect via localhost since 0.0.0.0 is not routable
             with httpx.Client(follow_redirects=True) as client:
                 response = client.post(

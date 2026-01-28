@@ -15,7 +15,9 @@ async def test_list_tools(readonly_client):
     tools = await readonly_client.list_tools()
     tool_names = {t.name for t in tools}
     assert "execute_query" in tool_names
-    assert len(tools) == 4  # query, list_databases, list_tables, list_columns (switch_database_connection requires --allow-switch-databases)
+    assert (
+        len(tools) == 3
+    )  # execute_query, list_tables, list_columns (list_databases requires --list-databases)
 
 
 @pytest.mark.asyncio
@@ -75,7 +77,9 @@ async def test_update_fails(readonly_client):
 @pytest.mark.asyncio
 async def test_delete_fails(readonly_client):
     """DELETE fails in read-only mode."""
-    result = await readonly_client.call_tool_mcp("execute_query", {"sql": "DELETE FROM users WHERE id = 1"})
+    result = await readonly_client.call_tool_mcp(
+        "execute_query", {"sql": "DELETE FROM users WHERE id = 1"}
+    )
     assert result.isError is True
     text = get_result_text(result)
     assert "read-only" in text.lower()

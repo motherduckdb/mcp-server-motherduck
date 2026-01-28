@@ -59,3 +59,8 @@ tag = false
 ]
 "server.json" = ['"version": "{version}"']
 "src/mcp_server_motherduck/configs.py" = ['SERVER_VERSION = "{version}"']
+
+[dependency-groups]
+dev = [
+    "pre-commit>=4.5.1",
+]
