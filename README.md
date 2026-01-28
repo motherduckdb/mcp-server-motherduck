@@ -1,6 +1,20 @@
-# DuckDB MCP Server by MotherDuck
+<p align="center">
+  <img src="src/mcp_server_motherduck/assets/duck_feet_square.png" alt="DuckDB MCP Server" width="120">
+</p>
 
-A local MCP server for DuckDB and MotherDuck databases, providing SQL analytics and **read-write capabilities** to AI Assistants and IDEs.
+<h1 align="center">DuckDB MCP Server</h1>
+
+<p align="center">
+  SQL analytics and data engineering for AI Assistants and IDEs.
+</p>
+
+<p align="center">
+  <em>by <a href="https://motherduck.com">MotherDuck</a></em>
+</p>
+
+---
+
+A local MCP server for DuckDB and MotherDuck databases, providing **read-write capabilities** to AI Assistants and IDEs.
 
 > **Note**: This is a **local** MCP server. For zero-setup read-only access, see [MotherDuck's hosted MCP](https://motherduck.com/docs/sql-reference/mcp/).
 
