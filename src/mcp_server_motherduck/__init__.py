@@ -19,82 +19,87 @@ logging.basicConfig(level=logging.INFO, format="[motherduck] %(levelname)s - %(m
 
 
 @click.command()
-@click.option("--port", default=8000, help="Port to listen on for HTTP transport")
-@click.option("--host", default=SERVER_LOCALHOST, help="Host to bind the MCP server")
+@click.option(
+    "--port", default=8000, envvar="MCP_PORT", help="Port to listen on for HTTP transport"
+)
+@click.option(
+    "--host", default=SERVER_LOCALHOST, envvar="MCP_HOST", help="Host to bind the MCP server"
+)
 @click.option(
     "--transport",
     type=click.Choice(["stdio", "http", "sse", "stream"]),
     default="stdio",
+    envvar="MCP_TRANSPORT",
     help="(Default: `stdio`) Transport type. Use `http` for HTTP Streamable transport. `sse` and `stream` are deprecated aliases.",
 )
 @click.option(
     "--db-path",
     default=":memory:",
+    envvar="MCP_DB_PATH",
     help="(Default: `:memory:`) Path to local DuckDB database file or MotherDuck database",
 )
 @click.option(
     "--motherduck-token",
     default=None,
+    envvar="motherduck_token",
     help="(Default: env var `motherduck_token`) Access token to use for MotherDuck database connections",
 )
 @click.option(
     "--home-dir",
     default=None,
+    envvar="MCP_HOME_DIR",
     help="(Default: env var `HOME`) Home directory for DuckDB",
 )
 @click.option(
-    "--saas-mode",
+    "--motherduck-saas-mode",
     is_flag=True,
+    envvar="MCP_SAAS_MODE",
     help="Flag for connecting to MotherDuck in SaaS mode",
 )
 @click.option(
     "--read-write",
     is_flag=True,
+    envvar="MCP_READ_WRITE",
     help="Enable write access to the database. By default, the server runs in read-only mode for local DuckDB files and MotherDuck databases. Note: In-memory databases are always writable (DuckDB limitation).",
 )
 @click.option(
     "--ephemeral-connections/--no-ephemeral-connections",
     default=True,
+    envvar="MCP_EPHEMERAL_CONNECTIONS",
     help="Use temporary connections for read-only local DuckDB files, creating a new connection for each query. This keeps the file unlocked so other processes can write to it.",
 )
 @click.option(
     "--max-rows",
     type=int,
     default=1024,
+    envvar="MCP_MAX_ROWS",
     help="(Default: `1024`) Maximum number of rows to return from queries. Use LIMIT in your SQL for specific row counts.",
 )
 @click.option(
     "--max-chars",
     type=int,
     default=50000,
+    envvar="MCP_MAX_CHARS",
     help="(Default: `50000`) Maximum number of characters in query results. Prevents issues with wide rows or large text columns.",
 )
 @click.option(
     "--query-timeout",
     type=int,
     default=-1,
+    envvar="MCP_QUERY_TIMEOUT",
     help="(Default: `-1`) Query execution timeout in seconds. Set to -1 to disable timeout.",
 )
 @click.option(
     "--init-sql",
     default=None,
+    envvar="MCP_INIT_SQL",
     help="SQL file path or SQL string to execute on startup for database initialization.",
 )
 @click.option(
     "--allow-switch-databases",
     is_flag=True,
+    envvar="MCP_ALLOW_SWITCH_DATABASES",
     help="Enable the switch_database_connection tool to change databases at runtime. Disabled by default.",
-)
-@click.option(
-    "--enable-list-databases",
-    is_flag=True,
-    default=False,
-    help="Enable the list_databases tool. Auto-enabled for MotherDuck connections, disabled by default for local DuckDB.",
-)
-@click.option(
-    "--secure-mode",
-    is_flag=True,
-    help="Enable secure mode for local DuckDB: disables local filesystem access, community extensions, and locks configuration. Similar to MotherDuck's SaaS mode but for local databases.",
 )
 def main(
     port: int,
@@ -103,7 +108,7 @@ def main(
     db_path: str,
     motherduck_token: str | None,
     home_dir: str | None,
-    saas_mode: bool,
+    motherduck_saas_mode: bool,
     read_write: bool,
     ephemeral_connections: bool,
     max_rows: int,
@@ -111,8 +116,6 @@ def main(
     query_timeout: int,
     init_sql: str | None,
     allow_switch_databases: bool,
-    enable_list_databases: bool,
-    secure_mode: bool,
 ) -> None:
     """MotherDuck MCP Server - Execute SQL queries via DuckDB/MotherDuck."""
     # Convert read_write flag to read_only (inverted logic)
@@ -127,21 +130,6 @@ def main(
             "  - Use --db-path with a file path for read-only access to a DuckDB file\n"
             "  - Use --db-path md: with a MotherDuck token for cloud database access"
         )
-
-    # Secure mode cannot be combined with read-write
-    if secure_mode and read_write:
-        raise click.UsageError(
-            "--secure-mode cannot be used with --read-write.\n"
-            "Secure mode is designed for read-only access to local DuckDB files."
-        )
-
-    # Secure mode: apply security restrictions for local DuckDB
-    if secure_mode:
-        logger.info("🔒 Secure mode enabled")
-
-    # Auto-enable list_databases for MotherDuck
-    is_motherduck = db_path.startswith("md:")
-    list_databases = enable_list_databases or is_motherduck
 
     logger.info("🦆 MotherDuck MCP Server v" + SERVER_VERSION)
     logger.info("Ready to execute SQL queries via DuckDB/MotherDuck")
@@ -161,8 +149,6 @@ def main(
         logger.info("Init SQL: configured")
     if allow_switch_databases:
         logger.info("Switch databases: enabled")
-    if list_databases:
-        logger.info("List databases: enabled")
 
     # Handle deprecated transport aliases
     if transport == "stream":
@@ -187,7 +173,7 @@ def main(
         db_path=db_path,
         motherduck_token=motherduck_token,
         home_dir=home_dir,
-        saas_mode=saas_mode,
+        saas_mode=motherduck_saas_mode,
         read_only=read_only,
         ephemeral_connections=ephemeral_connections,
         max_rows=max_rows,
@@ -195,8 +181,6 @@ def main(
         query_timeout=query_timeout,
         init_sql=init_sql,
         allow_switch_databases=allow_switch_databases,
-        list_databases=list_databases,
-        secure_mode=secure_mode,
     )
 
     # Run the server with the appropriate transport

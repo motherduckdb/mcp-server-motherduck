@@ -18,9 +18,9 @@ def parse_json_result(result) -> dict:
 
 
 @pytest.mark.asyncio
-async def test_list_tools_includes_catalog_tools(memory_client_with_list_databases):
-    """Server exposes all four tools including catalog tools when list_databases enabled."""
-    tools = await memory_client_with_list_databases.list_tools()
+async def test_list_tools_includes_catalog_tools(memory_client):
+    """Server exposes all four catalog tools."""
+    tools = await memory_client.list_tools()
     tool_names = {t.name for t in tools}
 
     assert "execute_query" in tool_names
@@ -31,9 +31,9 @@ async def test_list_tools_includes_catalog_tools(memory_client_with_list_databas
 
 
 @pytest.mark.asyncio
-async def test_list_databases_memory(memory_client_with_list_databases):
+async def test_list_databases_memory(memory_client):
     """list_databases returns database list for in-memory DB."""
-    result = await memory_client_with_list_databases.call_tool_mcp("list_databases", {})
+    result = await memory_client.call_tool_mcp("list_databases", {})
     assert result.isError is False
 
     data = parse_json_result(result)
@@ -48,9 +48,9 @@ async def test_list_databases_memory(memory_client_with_list_databases):
 
 
 @pytest.mark.asyncio
-async def test_list_databases_local_file(local_client_with_list_databases):
+async def test_list_databases_local_file(local_client):
     """list_databases returns database list for local DuckDB file."""
-    result = await local_client_with_list_databases.call_tool_mcp("list_databases", {})
+    result = await local_client.call_tool_mcp("list_databases", {})
     assert result.isError is False
 
     data = parse_json_result(result)
@@ -100,18 +100,16 @@ async def test_list_tables_with_schema_filter(memory_client):
 
 
 @pytest.mark.asyncio
-async def test_list_tables_local_file(local_client_with_list_databases):
+async def test_list_tables_local_file(local_client):
     """list_tables returns tables from local DuckDB file."""
     # First get the database name
-    db_result = await local_client_with_list_databases.call_tool_mcp("list_databases", {})
+    db_result = await local_client.call_tool_mcp("list_databases", {})
     db_data = parse_json_result(db_result)
 
     # Use the first non-system database
     db_name = db_data["databases"][0]["name"]
 
-    result = await local_client_with_list_databases.call_tool_mcp(
-        "list_tables", {"database": db_name}
-    )
+    result = await local_client.call_tool_mcp("list_tables", {"database": db_name})
     assert result.isError is False
 
     data = parse_json_result(result)
@@ -258,9 +256,9 @@ async def test_tool_annotations_read_only_mode(readonly_client):
 
 
 @pytest.mark.asyncio
-async def test_catalog_tools_always_readonly(memory_client_with_list_databases):
+async def test_catalog_tools_always_readonly(memory_client):
     """Catalog tools always have readOnlyHint=True."""
-    tools = await memory_client_with_list_databases.list_tools()
+    tools = await memory_client.list_tools()
 
     for tool in tools:
         if tool.name in ["list_databases", "list_tables", "list_columns"]:

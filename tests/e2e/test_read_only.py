@@ -15,9 +15,8 @@ async def test_list_tools(readonly_client):
     tools = await readonly_client.list_tools()
     tool_names = {t.name for t in tools}
     assert "execute_query" in tool_names
-    assert (
-        len(tools) == 3
-    )  # execute_query, list_tables, list_columns (list_databases requires --list-databases)
+    assert "list_databases" in tool_names
+    assert len(tools) == 4  # execute_query, list_databases, list_tables, list_columns
 
 
 @pytest.mark.asyncio

@@ -30,8 +30,9 @@ async def test_concurrent_readonly_connections(test_db_path):
     don't hold locks, allowing concurrent access.
     """
     # Create two read-only clients pointing to the same database
-    client1 = get_mcp_client("--db-path", str(test_db_path), "--read-only")
-    client2 = get_mcp_client("--db-path", str(test_db_path), "--read-only")
+    # (read-only is the default when --read-write is not specified)
+    client1 = get_mcp_client("--db-path", str(test_db_path))
+    client2 = get_mcp_client("--db-path", str(test_db_path))
 
     async with client1, client2:
         # Both clients should be able to query simultaneously
@@ -58,9 +59,9 @@ async def test_concurrent_readonly_parallel_queries(test_db_path):
     """
     Run queries in parallel from multiple read-only clients.
     """
-    client1 = get_mcp_client("--db-path", str(test_db_path), "--read-only")
-    client2 = get_mcp_client("--db-path", str(test_db_path), "--read-only")
-    client3 = get_mcp_client("--db-path", str(test_db_path), "--read-only")
+    client1 = get_mcp_client("--db-path", str(test_db_path))
+    client2 = get_mcp_client("--db-path", str(test_db_path))
+    client3 = get_mcp_client("--db-path", str(test_db_path))
 
     async with client1, client2, client3:
         # Run queries in parallel
@@ -88,7 +89,7 @@ async def test_readonly_does_not_block_other_readonly(test_db_path):
     """
     Opening a read-only connection shouldn't block another read-only connection.
     """
-    client1 = get_mcp_client("--db-path", str(test_db_path), "--read-only")
+    client1 = get_mcp_client("--db-path", str(test_db_path))
 
     async with client1:
         # First client queries
@@ -96,7 +97,7 @@ async def test_readonly_does_not_block_other_readonly(test_db_path):
         assert result1.isError is False
 
         # While first client is connected, open second client
-        client2 = get_mcp_client("--db-path", str(test_db_path), "--read-only")
+        client2 = get_mcp_client("--db-path", str(test_db_path))
         async with client2:
             # Second client should also be able to query
             result2 = await client2.call_tool_mcp("execute_query", {"sql": "SELECT 2 as num"})

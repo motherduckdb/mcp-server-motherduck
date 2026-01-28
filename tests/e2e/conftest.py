@@ -115,27 +115,9 @@ async def local_client(test_db_path: Path) -> AsyncGenerator[Client, None]:
 
 
 @pytest.fixture
-async def local_client_with_list_databases(test_db_path: Path) -> AsyncGenerator[Client, None]:
-    """Create a client connected to a local DuckDB file with list_databases enabled."""
-    client = get_mcp_client(
-        "--db-path", str(test_db_path), "--read-write", "--enable-list-databases"
-    )
-    async with client:
-        yield client
-
-
-@pytest.fixture
 async def memory_client() -> AsyncGenerator[Client, None]:
     """Create a client connected to an in-memory DuckDB (always writable)."""
     client = get_mcp_client("--db-path", ":memory:", "--read-write")
-    async with client:
-        yield client
-
-
-@pytest.fixture
-async def memory_client_with_list_databases() -> AsyncGenerator[Client, None]:
-    """Create a client connected to an in-memory DuckDB with list_databases enabled."""
-    client = get_mcp_client("--db-path", ":memory:", "--read-write", "--enable-list-databases")
     async with client:
         yield client
 
@@ -180,16 +162,8 @@ async def motherduck_saas_client(
         "md:",
         "--motherduck-token",
         motherduck_token_read_scaling,
-        "--saas-mode",
+        "--motherduck-saas-mode",
     )
-    async with client:
-        yield client
-
-
-@pytest.fixture
-async def secure_mode_client(test_db_path: Path) -> AsyncGenerator[Client, None]:
-    """Create a client connected to a local DuckDB in secure mode."""
-    client = get_mcp_client("--db-path", str(test_db_path), "--secure-mode")
     async with client:
         yield client
 

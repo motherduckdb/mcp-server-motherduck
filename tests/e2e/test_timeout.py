@@ -35,7 +35,7 @@ async def test_slow_query_times_out():
     Note: This test is environment-dependent. On very fast machines,
     the query may complete before the timeout. Marked as slow.
     """
-    client = create_limited_client(":memory:", query_timeout=1)
+    client = create_limited_client(":memory:", query_timeout=1, read_write=True)
 
     async with client:
         result = await client.call_tool_mcp(
@@ -62,7 +62,7 @@ async def test_slow_query_times_out():
 @pytest.mark.asyncio
 async def test_timeout_disabled_with_negative_one():
     """Timeout is disabled when set to -1."""
-    client = create_limited_client(":memory:", query_timeout=-1)
+    client = create_limited_client(":memory:", query_timeout=-1, read_write=True)
 
     async with client:
         # A query that should complete

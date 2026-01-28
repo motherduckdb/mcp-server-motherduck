@@ -32,9 +32,7 @@ async def s3_client(s3_db_path: str):
 async def test_s3_list_tools(s3_client):
     """Server exposes the query tool when connected to S3 database."""
     tools = await s3_client.list_tools()
-    assert (
-        len(tools) == 3
-    )  # execute_query, list_tables, list_columns (list_databases requires --list-databases)
+    assert len(tools) == 4  # execute_query, list_databases, list_tables, list_columns
     assert tools[0].name == "execute_query"
 
 

@@ -106,10 +106,8 @@ DETACH my_db;
 def get_instructions(
     read_only: bool = False,
     saas_mode: bool = False,
-    secure_mode: bool = False,
     db_path: str = ":memory:",
     allow_switch_databases: bool = False,
-    list_databases_enabled: bool = False,
 ) -> str:
     """
     Get server instructions with connection context.
@@ -117,10 +115,8 @@ def get_instructions(
     Args:
         read_only: Whether the server is in read-only mode
         saas_mode: Whether MotherDuck is in SaaS mode
-        secure_mode: Whether secure mode is enabled
         db_path: The database path being used
         allow_switch_databases: Whether database switching is enabled
-        list_databases_enabled: Whether list_databases tool is enabled
 
     Returns:
         Instructions string with context header
@@ -153,15 +149,8 @@ def get_instructions(
             "- **SaaS mode**: Enabled - local filesystem access is restricted for security"
         )
 
-    if secure_mode:
-        context_lines.append(
-            "- **Secure mode**: Enabled - local filesystem access, community extensions, and configuration changes are restricted"
-        )
-
     # Available tools
-    tools = ["execute_query", "list_tables", "list_columns"]
-    if list_databases_enabled:
-        tools.insert(1, "list_databases")
+    tools = ["execute_query", "list_databases", "list_tables", "list_columns"]
     if allow_switch_databases:
         tools.append("switch_database_connection")
     context_lines.append(f"- **Available tools**: {', '.join(tools)}")

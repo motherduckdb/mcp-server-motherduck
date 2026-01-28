@@ -47,7 +47,6 @@ class DatabaseClient:
         max_chars: int = 50000,
         query_timeout: int = -1,
         init_sql: str | None = None,
-        secure_mode: bool = False,
     ):
         self._read_only = read_only
         self._ephemeral_connections = ephemeral_connections
@@ -55,7 +54,6 @@ class DatabaseClient:
         self._max_chars = max_chars
         self._query_timeout = query_timeout
         self._init_sql = init_sql
-        self._secure_mode = secure_mode
         self.db_path, self.db_type = self._resolve_db_path_type(
             db_path, motherduck_token, saas_mode
         )
@@ -93,8 +91,7 @@ class DatabaseClient:
                 else:
                     # User requested persistent connection via --no-ephemeral-connections
                     logger.info("Using persistent read-only connection")
-                    # Apply security settings and init SQL
-                    self._apply_security_settings(conn)
+                    # Execute init SQL
                     self._execute_init_sql(conn)
                     return conn
             except Exception as e:
@@ -171,8 +168,7 @@ class DatabaseClient:
                 else:
                     raise
 
-            # Apply security settings and init SQL
-            self._apply_security_settings(conn)
+            # Execute init SQL
             self._execute_init_sql(conn)
             return conn
 
@@ -198,24 +194,10 @@ class DatabaseClient:
                 )
             logger.info("Verified read-scaling connection for --read-only mode")
 
-        # Apply security settings and init SQL
-        self._apply_security_settings(conn)
+        # Execute init SQL
         self._execute_init_sql(conn)
 
         return conn
-
-    def _apply_security_settings(self, conn: duckdb.DuckDBPyConnection) -> None:
-        """Apply security settings to the connection."""
-        if self._secure_mode:
-            # Disable local filesystem access
-            conn.execute("SET disabled_filesystems = 'LocalFileSystem'")
-            # Disable community extensions (only allow core extensions)
-            conn.execute("SET allow_community_extensions = false")
-            # Disable auto-installing extensions
-            conn.execute("SET autoinstall_known_extensions = false")
-            # Lock configuration to prevent changes
-            conn.execute("SET lock_configuration = true")
-            logger.info("Applied secure mode settings")
 
     def _execute_init_sql(self, conn: duckdb.DuckDBPyConnection) -> None:
         """Execute initialization SQL if provided."""
@@ -289,8 +271,6 @@ class DatabaseClient:
                 config={"custom_user_agent": f"mcp-server-motherduck/{SERVER_VERSION}"},
                 read_only=self._read_only,
             )
-            # Apply security settings to ephemeral connection
-            self._apply_security_settings(conn)
         else:
             conn = self.conn
 
@@ -314,7 +294,7 @@ class DatabaseClient:
             if has_more_rows:
                 result["truncated"] = True
                 result["warning"] = (
-                    f"Results limited to {self._max_rows:,} rows. " "Query returned more data."
+                    f"Results limited to {self._max_rows:,} rows. Query returned more data."
                 )
 
             # Check character limit on JSON output
@@ -405,8 +385,6 @@ class DatabaseClient:
                 config={"custom_user_agent": f"mcp-server-motherduck/{SERVER_VERSION}"},
                 read_only=self._read_only,
             )
-            # Apply security settings to ephemeral connection
-            self._apply_security_settings(conn)
         else:
             conn = self.conn
 

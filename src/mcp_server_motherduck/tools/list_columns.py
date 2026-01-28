@@ -4,28 +4,41 @@ List columns tool - List all columns of a table or view.
 
 from typing import Any
 
-DESCRIPTION = "List all columns of a table or view with their types and comments."
+DESCRIPTION = (
+    "List all columns of a table or view with their types and comments. "
+    "If database/schema are not specified, uses the current database/schema."
+)
 
 
 def list_columns(
-    database: str,
     table: str,
     db_client: Any,
-    schema: str = "main",
+    database: str | None = None,
+    schema: str | None = None,
 ) -> dict[str, Any]:
     """
     List all columns of a table or view.
 
     Args:
-        database: Database name
         table: Table or view name
         db_client: DatabaseClient instance (injected by server)
-        schema: Schema name (defaults to 'main')
+        database: Database name (defaults to current database)
+        schema: Schema name (defaults to current schema)
 
     Returns:
         JSON-serializable dict with column list or error
     """
     try:
+        # Get current database if not specified
+        if database is None:
+            _, _, db_rows = db_client.execute_raw("SELECT current_database()")
+            database = db_rows[0][0]
+
+        # Get current schema if not specified
+        if schema is None:
+            _, _, schema_rows = db_client.execute_raw("SELECT current_schema()")
+            schema = schema_rows[0][0]
+
         # Query columns using DuckDB system function
         sql = f"""
             SELECT

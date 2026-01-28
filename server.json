@@ -2,6 +2,13 @@
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
   "name": "io.github.motherduckdb/mcp-server-motherduck",
   "description": "Fast analytics and data processing with DuckDB and MotherDuck",
+  "icons": [
+    {
+      "src": "https://t2.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://motherduck.com&size=64",
+      "mimeType": "image/png",
+      "sizes": ["64x64"]
+    }
+  ],
   "repository": {
     "url": "https://github.com/motherduckdb/mcp-server-motherduck",
     "source": "github"

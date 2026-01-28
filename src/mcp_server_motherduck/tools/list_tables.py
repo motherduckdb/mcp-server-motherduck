@@ -4,26 +4,34 @@ List tables tool - List all tables and views in a database.
 
 from typing import Any
 
-DESCRIPTION = "List all tables and views in a database with their comments."
+DESCRIPTION = (
+    "List all tables and views in a database with their comments. "
+    "If database is not specified, uses the current database."
+)
 
 
 def list_tables(
-    database: str,
     db_client: Any,
+    database: str | None = None,
     schema: str | None = None,
 ) -> dict[str, Any]:
     """
     List all tables and views in a database.
 
     Args:
-        database: Database name to list tables from
         db_client: DatabaseClient instance (injected by server)
+        database: Database name to list tables from (defaults to current database)
         schema: Optional schema name to filter by (defaults to all schemas)
 
     Returns:
         JSON-serializable dict with table/view list or error
     """
     try:
+        # Get current database if not specified
+        if database is None:
+            _, _, db_rows = db_client.execute_raw("SELECT current_database()")
+            database = db_rows[0][0]
+
         # Build schema filter
         schema_filter = f"AND schema_name = '{schema}'" if schema else ""
 

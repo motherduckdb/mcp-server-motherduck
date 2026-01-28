@@ -1,0 +1,125 @@
+{
+  "manifest_version": "0.4",
+  "name": "mcp-server-motherduck",
+  "display_name": "Local DuckDB",
+  "version": "0.8.1",
+  "description": "A local MCP server for DuckDB and MotherDuck databases, providing SQL analytics capabilities to AI Assistants and IDEs.",
+  "long_description": "Connect AI assistants to your data using DuckDB's powerful analytical SQL engine. Supports local DuckDB files, in-memory databases, S3-hosted databases, and MotherDuck cloud. Features include executing SQL queries, browsing database catalogs, read-only mode by default, and SaaS mode for MotherDuck.",
+  "author": {
+    "name": "MotherDuck",
+    "url": "https://motherduck.com"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/motherduckdb/mcp-server-motherduck.git"
+  },
+  "homepage": "https://github.com/motherduckdb/mcp-server-motherduck",
+  "documentation": "https://github.com/motherduckdb/mcp-server-motherduck#readme",
+  "support": "https://github.com/motherduckdb/mcp-server-motherduck/issues",
+  "icon": "src/mcp_server_motherduck/assets/duck_feet_square.png",
+  "license": "MIT",
+  "keywords": ["duckdb", "motherduck", "sql", "analytics", "database", "data"],
+  "server": {
+    "type": "uv",
+    "entry_point": "src/mcp_server_motherduck/__init__.py",
+    "mcp_config": {
+      "command": "uv",
+      "args": [
+        "run",
+        "--with",
+        "mcp-server-motherduck",
+        "mcp-server-motherduck"
+      ],
+      "env": {
+        "MCP_DB_PATH": "${user_config.db_path}",
+        "motherduck_token": "${user_config.motherduck_token}",
+        "MCP_READ_WRITE": "${user_config.read_write}",
+        "MCP_SAAS_MODE": "${user_config.motherduck_saas_mode}",
+        "MCP_ALLOW_SWITCH_DATABASES": "${user_config.allow_switch_databases}",
+        "MCP_MAX_ROWS": "${user_config.max_rows}",
+        "MCP_MAX_CHARS": "${user_config.max_chars}",
+        "MCP_QUERY_TIMEOUT": "${user_config.query_timeout}"
+      }
+    }
+  },
+  "tools": [
+    {
+      "name": "execute_query",
+      "description": "Execute a SQL query. Unqualified table names resolve automatically; fully qualified names only needed for MotherDuck or multiple attached databases."
+    },
+    {
+      "name": "list_databases",
+      "description": "List all databases. Useful for MotherDuck or when multiple databases are attached."
+    },
+    {
+      "name": "list_tables",
+      "description": "List all tables and views. Defaults to current database if not specified."
+    },
+    {
+      "name": "list_columns",
+      "description": "List all columns of a table or view. Defaults to current database/schema if not specified."
+    }
+  ],
+  "tools_generated": true,
+  "compatibility": {
+    "platforms": ["darwin", "win32", "linux"]
+  },
+  "user_config": {
+    "db_path": {
+      "type": "string",
+      "title": "Database Path",
+      "description": "Database connection: ':memory:' for in-memory (requires read_write=true), 'md:' for MotherDuck, absolute file path (e.g. /Users/you/data.duckdb), or S3 URL (s3://bucket/path.duckdb)",
+      "default": ":memory:",
+      "required": true
+    },
+    "motherduck_token": {
+      "type": "string",
+      "title": "MotherDuck Token",
+      "description": "Access token for MotherDuck (required when using 'md:' database path)",
+      "sensitive": true,
+      "required": false
+    },
+    "read_write": {
+      "type": "boolean",
+      "title": "Enable Write Access",
+      "description": "Allow the server to modify data. By default, the server runs in read-only mode.",
+      "default": false
+    },
+    "motherduck_saas_mode": {
+      "type": "boolean",
+      "title": "SaaS Mode (MotherDuck)",
+      "description": "Enable SaaS mode for MotherDuck which disables local filesystem access for enhanced security.",
+      "default": false
+    },
+    "allow_switch_databases": {
+      "type": "boolean",
+      "title": "Allow Database Switching",
+      "description": "Enable the switch_database_connection tool to change databases at runtime.",
+      "default": false
+    },
+    "max_rows": {
+      "type": "number",
+      "title": "Maximum Rows",
+      "description": "Maximum number of rows to return from queries.",
+      "default": 1024,
+      "min": 1,
+      "max": 100000
+    },
+    "max_chars": {
+      "type": "number",
+      "title": "Maximum Characters",
+      "description": "Maximum number of characters in query results.",
+      "default": 50000,
+      "min": 1000,
+      "max": 1000000
+    },
+    "query_timeout": {
+      "type": "number",
+      "title": "Query Timeout (seconds)",
+      "description": "Query execution timeout in seconds. Set to -1 to disable.",
+      "default": -1,
+      "min": -1,
+      "max": 3600
+    }
+  }
+}

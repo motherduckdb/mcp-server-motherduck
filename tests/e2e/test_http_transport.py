@@ -73,7 +73,11 @@ class MCPHttpServer:
             str(self.port),
             "--db-path",
             self.db_path,
-        ] + self.extra_args
+        ]
+        # In-memory databases require --read-write
+        if self.db_path == ":memory:":
+            cmd.append("--read-write")
+        cmd.extend(self.extra_args)
 
         self.process = subprocess.Popen(
             cmd,
