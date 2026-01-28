@@ -162,10 +162,8 @@ For local DuckDB, use `--init-sql` to apply security settings like `SET enable_e
 
 ## Troubleshooting
 
-- **File locked**: Make sure `--ephemeral-connections` is turned on (default: true) and that you're not connected in read-write mode
-- **Connection issues**: Verify your MotherDuck token is correct
 - **`spawn uvx ENOENT`**: Specify full path to `uvx` (run `which uvx` to find it)
-- **Local file access**: Use absolute paths for `--db-path`
+- **File locked**: Make sure `--ephemeral-connections` is turned on (default: true) and that you're not connected in read-write mode
 
 ## Resources
 
