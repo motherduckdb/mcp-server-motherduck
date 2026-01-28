@@ -10,7 +10,7 @@ A local MCP server for DuckDB and MotherDuck databases, providing SQL analytics 
 
 **Prerequisites**: Install `uv` via `pip install uv` or `brew install uv`
 
-### Local DuckDB
+### Connecting to a Local DuckDB File
 
 ```json
 {
@@ -23,9 +23,9 @@ A local MCP server for DuckDB and MotherDuck databases, providing SQL analytics 
 }
 ```
 
-For write access, add `"--read-write"` to the args. Add `"--allow-switch-databases"` to enable switching between databases.
+The connection will be read-only by default. For write access, add `"--read-write"` to the args. Add `"--allow-switch-databases"` to enable switching between databases.
 
-### MotherDuck (Read/Write)
+### Connecting to MotherDuck in Read-Write Mode
 
 ```json
 {
@@ -41,59 +41,7 @@ For write access, add `"--read-write"` to the args. Add `"--allow-switch-databas
 }
 ```
 
-See [Command Line Parameters](#command-line-parameters) for more options, and [Troubleshooting](#troubleshooting) if you encounter issues.
-
-<details>
-<summary><b>More configuration examples</b></summary>
-
-**MotherDuck (Self-Hosted):**
-
-Use `--motherduck-saas-mode` when exposing the MCP server to third parties. SaaS mode disables local filesystem access, extension installation, and configuration changes for enhanced security. You can also configure `--host` and `--port` for HTTP transport.
-
-```json
-{
-  "mcpServers": {
-    "MotherDuck (Self-Hosted)": {
-      "command": "uvx",
-      "args": ["mcp-server-motherduck", "--db-path", "md:", "--motherduck-saas-mode", "--transport", "sse", "--host", "0.0.0.0", "--port", "8080"],
-      "env": {
-        "motherduck_token": "<YOUR_READ_SCALING_TOKEN>"
-      }
-    }
-  }
-}
-```
-
-**DuckDB file on S3 (Self-Hosted):**
-
-DuckDB can directly open `.duckdb` files from S3. If third parties have access to the server, use `--init-sql` to apply security settings (see [Securing DuckDB](https://duckdb.org/docs/stable/operations_manual/securing_duckdb/overview) for details).
-
-Authentication options:
-- **Environment variables**: `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_DEFAULT_REGION`
-- **AWS profiles**: Set `AWS_PROFILE` or use default profile from `~/.aws/credentials`
-- **IAM roles**: Automatically used on EC2/ECS/Lambda when no credentials are set
-
-```json
-{
-  "mcpServers": {
-    "S3 DuckDB (Self-Hosted)": {
-      "command": "uvx",
-      "args": [
-        "mcp-server-motherduck",
-        "--db-path", "s3://bucket/path/to/db.duckdb",
-        "--init-sql", "SET enable_external_access=false; SET autoinstall_known_extensions=false; SET autoload_known_extensions=false; SET lock_configuration=true;"
-      ],
-      "env": {
-        "AWS_ACCESS_KEY_ID": "<your_key>",
-        "AWS_SECRET_ACCESS_KEY": "<your_secret>",
-        "AWS_DEFAULT_REGION": "<your_region>"
-      }
-    }
-  }
-}
-```
-
-</details>
+See [Command Line Parameters](#command-line-parameters) for more options, [Securing for Production](#securing-for-production) for deployment guidance, and [Troubleshooting](#troubleshooting) if you encounter issues.
 
 ## Client Setup
 
