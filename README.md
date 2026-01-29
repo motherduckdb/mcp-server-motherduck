@@ -10,7 +10,7 @@
 
 ---
 
-A local MCP server that interacts with DuckDB and MotherDuck databases, providing SQL analytics capabilities to AI Assistants and IDEs.
+Connect AI assistants to your data using DuckDB's powerful analytical SQL engine. Supports connecting to local DuckDB files, in-memory databases, S3-hosted databases, and MotherDuck. Allows executing SQL read- and write-queries, browsing database catalogs, and switching between different database connections on-the-fly.
 
 ### Remote vs Local MCP
 
