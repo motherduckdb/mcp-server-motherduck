@@ -58,6 +58,10 @@
     {
       "name": "list_columns",
       "description": "List all columns of a table or view. Defaults to current database/schema if not specified."
+    },
+    {
+      "name": "switch_database_connection",
+      "description": "Switch to a different database connection (open world). Requires --allow-switch-databases flag."
     }
   ],
   "tools_generated": true,
@@ -68,7 +72,7 @@
     "db_path": {
       "type": "string",
       "title": "Database Path",
-      "description": "Use ':memory:' for in-memory, 'md:' for MotherDuck, or a file/S3 path",
+      "description": "Use ':memory:' for in-memory, 'md:' for MotherDuck, or absolute file path/http/s3 path pointing to a .duckdb file",
       "default": ":memory:",
       "required": true
     },

@@ -112,6 +112,13 @@ def create_mcp_server(
         "openWorldHint": False,
     }
 
+    # Switch database annotations (open world - can connect to any database)
+    switch_db_annotations = {
+        "readOnlyHint": False,
+        "destructiveHint": False,
+        "openWorldHint": True,
+    }
+
     # Register query tool
     @mcp.tool(
         name="execute_query",
@@ -202,7 +209,7 @@ def create_mcp_server(
         @mcp.tool(
             name="switch_database_connection",
             description="Switch to a different database connection. For local files, use absolute paths only. The new connection respects the server's read-only/read-write mode. For local files, the file must exist unless create_if_not_exists=True (requires read-write mode).",
-            annotations=catalog_annotations,
+            annotations=switch_db_annotations,
         )
         def switch_database_connection(path: str, create_if_not_exists: bool = False) -> str:
             """
