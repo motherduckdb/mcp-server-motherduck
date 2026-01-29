@@ -106,17 +106,6 @@ claude mcp add duckdb --transport stdio -- uvx mcp-server-motherduck --db-path /
 claude mcp add motherduck --transport stdio --env motherduck_token=YOUR_TOKEN -- uvx mcp-server-motherduck --db-path md: --read-write
 ```
 
-**Scoping options:**
-- `--scope local` (default): Only available in current project
-- `--scope project`: Shared with team via `.mcp.json`
-- `--scope user`: Available across all your projects
-
-**Manage servers:**
-```bash
-claude mcp list          # List configured servers
-claude mcp remove duckdb # Remove a server
-```
-
 </details>
 
 ## Tools
