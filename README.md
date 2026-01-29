@@ -49,7 +49,7 @@ Full flexibility with no guardrails — read-write access and the ability to swi
 ```json
 {
   "mcpServers": {
-    "Local DuckDB": {
+    "DuckDB": {
       "command": "uvx",
       "args": ["mcp-server-motherduck", "--db-path", "/absolute/path/to/your.duckdb"]
     }
