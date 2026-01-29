@@ -1,30 +1,50 @@
 <p align="center">
-  <img src="src/mcp_server_motherduck/assets/duck_feet_square.png" alt="DuckDB MCP Server" width="120">
+  <img src="src/mcp_server_motherduck/assets/duck_feet_square.png" alt="MotherDuck Local MCP Server" width="120">
 </p>
 
-<h1 align="center">DuckDB MCP Server</h1>
+<h1 align="center">MotherDuck Local MCP Server</h1>
 
 <p align="center">
   SQL analytics and data engineering for AI Assistants and IDEs.
 </p>
 
-<p align="center">
-  <em>by <a href="https://motherduck.com">MotherDuck</a></em>
-</p>
-
 ---
 
-A local MCP server for DuckDB and MotherDuck databases, providing **read-write capabilities** to AI Assistants and IDEs.
+A local MCP server that interacts with DuckDB and MotherDuck databases, providing SQL analytics capabilities to AI Assistants and IDEs.
 
-> **Note**: This is a **local** MCP server. For zero-setup read-only access, see [MotherDuck's hosted MCP](https://motherduck.com/docs/sql-reference/mcp/).
+### Remote vs Local MCP
 
-> ⚠️ **Read-Only by Default (since v1.0.0)**: The server runs in read-only mode by default to protect against accidental data modification. Add `--read-write` to enable write access. See [Securing for Production](#securing-for-production) for more details.
+| | **Remote MCP** | **Local MCP** (this repo) |
+|---|---|---|
+| **Hosting** | Hosted by MotherDuck | Run locally/self-hosted |
+| **Setup** | Zero-setup | Requires local installation |
+| **Access** | Read-only | Read-write supported |
+| **Local filesystem** | No | Yes — connect to local DuckDB files, query across local and remote data, ingest local data to MotherDuck |
+
+**→ [Remote MCP docs](https://motherduck.com/docs/sql-reference/mcp/)** (recommended default for most users)
+
+> ⚠️ **Read-Only by Default**: The MotherDuck Local MCP server runs in read-only mode by default to protect against accidental data modification. Add `--read-write` to enable write access. See [Securing for Production](#securing-for-production) for more details.
 
 ## Quick Start
 
 **Prerequisites**: Install `uv` via `pip install uv` or `brew install uv`
 
-### Connecting to a Local DuckDB File
+### Connecting to In-Memory DuckDB (Dev Mode)
+
+```json
+{
+  "mcpServers": {
+    "DuckDB In-Memory (R/W)": {
+      "command": "uvx",
+      "args": ["mcp-server-motherduck", "--db-path", ":memory:", "--read-write", "--allow-switch-databases"]
+    }
+  }
+}
+```
+
+Full flexibility with no guardrails — read-write access and the ability to switch to any database (local files, S3, or MotherDuck) at runtime.
+
+### Connecting to a Local DuckDB File in Read-Only Mode
 
 ```json
 {
@@ -37,14 +57,14 @@ A local MCP server for DuckDB and MotherDuck databases, providing **read-write c
 }
 ```
 
-The connection will be read-only by default. For write access, add `"--read-write"` to the args. Add `"--allow-switch-databases"` to enable switching between databases.
+Connects to a specific DuckDB file in read-only mode by default. You can also connect to remote DuckDB files on S3 using `s3://bucket/path.duckdb` — see [Environment Variables](#environment-variables) for S3 authentication. If you're considering third-party access, see [Securing for Production](#securing-for-production).
 
 ### Connecting to MotherDuck in Read-Write Mode
 
 ```json
 {
   "mcpServers": {
-    "MotherDuck (Read/Write)": {
+    "MotherDuck Local (R/W)": {
       "command": "uvx",
       "args": ["mcp-server-motherduck", "--db-path", "md:", "--read-write"],
       "env": {
@@ -133,14 +153,15 @@ All tools return JSON. Results are limited to 1024 rows / 50,000 chars by defaul
 
 ## Securing for Production
 
-**Read-only mode alone is not sufficient for production security.**
+For production deployments, we recommend **[MotherDuck Remote MCP](https://motherduck.com/docs/sql-reference/mcp/)** — zero-setup, read-only, and hosted by MotherDuck.
 
-For production deployments, we recommend **MotherDuck with SaaS mode and read-scaling tokens**:
+For self-hosted scenarios, use a **[service account](https://motherduck.com/docs/key-tasks/service-accounts-guide/)** with **SaaS mode** and **read-scaling tokens**:
 
-- [Read Scaling documentation](https://motherduck.com/docs/key-tasks/authenticating-and-connecting-to-motherduck/read-scaling/#creating-a-read-scaling-token) - tokens that restrict write capabilities
-- [SaaS Mode documentation](https://motherduck.com/docs/key-tasks/authenticating-and-connecting-to-motherduck/authenticating-to-motherduck/#authentication-using-saas-mode) - restricts local file access
+- [Service Accounts](https://motherduck.com/docs/key-tasks/service-accounts-guide/) - dedicated accounts for programmatic access
+- [Read Scaling Tokens](https://motherduck.com/docs/key-tasks/authenticating-and-connecting-to-motherduck/read-scaling/#creating-a-read-scaling-token) - tokens that restrict write capabilities
+- [SaaS Mode](https://motherduck.com/docs/key-tasks/authenticating-and-connecting-to-motherduck/authenticating-to-motherduck/#authentication-using-saas-mode) - restricts local file access
 
-For local DuckDB, use `--init-sql` to apply security settings like `SET enable_external_access=false` or `SET lock_configuration=true`. See the [Securing DuckDB guide](https://duckdb.org/docs/stable/operations_manual/securing_duckdb/overview) for all available options.
+For local DuckDB, use `--init-sql` to apply security settings. See the [Securing DuckDB guide](https://duckdb.org/docs/stable/operations_manual/securing_duckdb/overview) for options.
 
 ## Command Line Parameters
 
@@ -160,6 +181,16 @@ For local DuckDB, use `--init-sql` to apply security settings like `SET enable_e
 | `--port` | `8000` | Port for HTTP transport |
 | `--host` | `127.0.0.1` | Host for HTTP transport |
 
+## Environment Variables
+
+| Variable | Description |
+|----------|-------------|
+| `motherduck_token` | MotherDuck access token (alternative to `--motherduck-token`) |
+| `AWS_ACCESS_KEY_ID` | AWS access key for S3 database connections |
+| `AWS_SECRET_ACCESS_KEY` | AWS secret key for S3 database connections |
+| `AWS_SESSION_TOKEN` | AWS session token for temporary credentials (IAM roles, SSO, EC2 instance profiles) |
+| `AWS_DEFAULT_REGION` | AWS region for S3 connections |
+
 ## Troubleshooting
 
 - **`spawn uvx ENOENT`**: Specify full path to `uvx` (run `which uvx` to find it)
@@ -167,6 +198,7 @@ For local DuckDB, use `--init-sql` to apply security settings like `SET enable_e
 
 ## Resources
 
+- [MotherDuck MCP Documentation](https://motherduck.com/docs/sql-reference/mcp/)
 - [Close the Loop: Faster Data Pipelines with MCP, DuckDB & AI (Blog)](https://motherduck.com/blog/faster-data-pipelines-with-mcp-duckdb-ai/)
 - [Faster Data Pipelines with MCP and DuckDB (YouTube)](https://www.youtube.com/watch?v=yG1mv8ZRxcU)
 

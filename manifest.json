@@ -1,7 +1,7 @@
 {
   "manifest_version": "0.4",
   "name": "mcp-server-motherduck",
-  "display_name": "Local DuckDB",
+  "display_name": "MotherDuck Local",
   "version": "0.8.1",
   "description": "SQL analytics and data engineering for AI Assistants and IDEs.",
   "long_description": "Connect AI assistants to your data using DuckDB's powerful analytical SQL engine. Supports connecting to local DuckDB files, in-memory databases, S3-hosted databases, and MotherDuck. Allows executing SQL read- and write-queries, browsing database catalogs, and switching between different database connections on-the-fly.",
@@ -68,7 +68,7 @@
     "db_path": {
       "type": "string",
       "title": "Database Path",
-      "description": "Database connection: ':memory:' for in-memory (requires read_write=true), 'md:' for MotherDuck, absolute file path (e.g. /Users/you/data.duckdb), or S3 URL (s3://bucket/path.duckdb)",
+      "description": "Use ':memory:' for in-memory, 'md:' for MotherDuck, or a file/S3 path",
       "default": ":memory:",
       "required": true
     },
@@ -82,19 +82,19 @@
     "read_write": {
       "type": "boolean",
       "title": "Enable Write Access",
-      "description": "Allow the server to modify data. By default, the server runs in read-only mode.",
-      "default": false
-    },
-    "motherduck_saas_mode": {
-      "type": "boolean",
-      "title": "SaaS Mode (MotherDuck)",
-      "description": "Enable SaaS mode for MotherDuck which disables local filesystem access for enhanced security.",
-      "default": false
+      "description": "Allow the server to modify data.",
+      "default": true
     },
     "allow_switch_databases": {
       "type": "boolean",
       "title": "Allow Database Switching",
       "description": "Enable the switch_database_connection tool to change databases at runtime.",
+      "default": true
+    },
+    "motherduck_saas_mode": {
+      "type": "boolean",
+      "title": "SaaS Mode (MotherDuck)",
+      "description": "Enable SaaS mode for MotherDuck which disables local filesystem access for enhanced security.",
       "default": false
     },
     "max_rows": {
