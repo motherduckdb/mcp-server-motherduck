@@ -246,15 +246,16 @@ class DatabaseClient:
                         f"{db_path}?motherduck_token={motherduck_token}",
                         "motherduck",
                     )
-            elif os.getenv("motherduck_token"):
+            elif os.getenv("motherduck_token") or os.getenv("MOTHERDUCK_TOKEN"):
+                token = os.getenv("motherduck_token") or os.getenv("MOTHERDUCK_TOKEN")
                 logger.info("Using MotherDuck token from env to connect to database `md:`")
                 return (
-                    f"{db_path}?motherduck_token={os.getenv('motherduck_token')}",
+                    f"{db_path}?motherduck_token={token}",
                     "motherduck",
                 )
             else:
                 raise ValueError(
-                    "Please set the `motherduck_token` as an environment variable or pass it as an argument with `--motherduck-token` when using `md:` as db_path."
+                    "Please set the `motherduck_token` or `MOTHERDUCK_TOKEN` as an environment variable or pass it as an argument with `--motherduck-token` when using `md:` as db_path."
                 )
 
         if db_path == ":memory:":

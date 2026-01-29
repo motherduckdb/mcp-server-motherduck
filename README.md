@@ -185,7 +185,7 @@ For local DuckDB, use `--init-sql` to apply security settings. See the [Securing
 
 | Variable | Description |
 |----------|-------------|
-| `motherduck_token` | MotherDuck access token (alternative to `--motherduck-token`) |
+| `motherduck_token` or `MOTHERDUCK_TOKEN` | MotherDuck access token (alternative to `--motherduck-token`) |
 | `AWS_ACCESS_KEY_ID` | AWS access key for S3 database connections |
 | `AWS_SECRET_ACCESS_KEY` | AWS secret key for S3 database connections |
 | `AWS_SESSION_TOKEN` | AWS session token for temporary credentials (IAM roles, SSO, EC2 instance profiles) |

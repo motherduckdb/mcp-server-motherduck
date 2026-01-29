@@ -41,8 +41,8 @@ logging.basicConfig(level=logging.INFO, format="[motherduck] %(levelname)s - %(m
 @click.option(
     "--motherduck-token",
     default=None,
-    envvar="motherduck_token",
-    help="(Default: env var `motherduck_token`) Access token to use for MotherDuck database connections",
+    envvar=["motherduck_token", "MOTHERDUCK_TOKEN"],
+    help="(Default: env var `motherduck_token` or `MOTHERDUCK_TOKEN`) Access token to use for MotherDuck database connections",
 )
 @click.option(
     "--home-dir",
