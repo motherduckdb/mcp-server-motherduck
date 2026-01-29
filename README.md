@@ -89,7 +89,7 @@ See [Command Line Parameters](#command-line-parameters) for more options, [Secur
 Any MCP-compatible client can use this server. Add the JSON configuration from [Quick Start](#quick-start) to your client's MCP config file. Consult your client's documentation for the config file location.
 
 <details>
-<summary><b>Claude Code setup</b></summary>
+<summary><b>Claude Code CLI commands</b></summary>
 
 **In-Memory DuckDB (Dev Mode):**
 ```bash
