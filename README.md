@@ -79,31 +79,31 @@ See [Command Line Parameters](#command-line-parameters) for more options, [Secur
 
 ## Client Setup
 
-| Client | Config Location |
-|--------|-----------------|
-| **Claude Desktop** | Settings → Developer → Edit Config, or install [MCPB package](https://github.com/motherduckdb/mcp-server-motherduck/releases) |
-| **Claude Code** | Use CLI commands below |
-| **Cursor** | Settings → MCP → Add new global MCP server |
-| **VS Code** | `Ctrl+Shift+P` → "Preferences: Open User Settings (JSON)" |
+| Client | Config Location | One-Click Install |
+|--------|-----------------|-------------------|
+| **Claude Desktop** | Settings → Developer → Edit Config, or install [MCPB package](https://github.com/motherduckdb/mcp-server-motherduck/releases) | - |
+| **Claude Code** | Use CLI commands below | - |
+| **Cursor** | Settings → MCP → Add new global MCP server | [<img src="https://cursor.com/deeplink/mcp-install-dark.svg" alt="Install in Cursor" height="20">](https://cursor.com/en/install-mcp?name=DuckDB&config=eyJjb21tYW5kIjoidXZ4IG1jcC1zZXJ2ZXItbW90aGVyZHVjayAtLWRiLXBhdGggOm1lbW9yeTogLS1yZWFkLXdyaXRlIC0tYWxsb3ctc3dpdGNoLWRhdGFiYXNlcyIsImVudiI6e319) |
+| **VS Code** | `Ctrl+Shift+P` → "Preferences: Open User Settings (JSON)" | [![Install with UV in VS Code](https://img.shields.io/badge/VS_Code-Install-0098FF?style=flat-square)](https://insiders.vscode.dev/redirect/mcp/install?name=mcp-server-motherduck&config=%7B%22command%22%3A%22uvx%22%2C%22args%22%3A%5B%22mcp-server-motherduck%22%2C%22--db-path%22%2C%22md%3A%22%2C%22--motherduck-token%22%2C%22%24%7Binput%3Amotherduck_token%7D%22%5D%7D&inputs=%5B%7B%22type%22%3A%22promptString%22%2C%22id%22%3A%22motherduck_token%22%2C%22description%22%3A%22MotherDuck+Token%22%2C%22password%22%3Atrue%7D%5D) |
 
 Any MCP-compatible client can use this server. Add the JSON configuration from [Quick Start](#quick-start) to your client's MCP config file. Consult your client's documentation for the config file location.
 
 <details>
 <summary><b>Claude Code setup</b></summary>
 
-**Local DuckDB:**
+**In-Memory DuckDB (Dev Mode):**
+```bash
+claude mcp add duckdb --transport stdio -- uvx mcp-server-motherduck --db-path :memory: --read-write --allow-switch-databases
+```
+
+**Local DuckDB (Read-Only):**
 ```bash
 claude mcp add duckdb --transport stdio -- uvx mcp-server-motherduck --db-path /absolute/path/to/db.duckdb
 ```
 
-**Local DuckDB (read-write):**
+**MotherDuck (Read-Write):**
 ```bash
-claude mcp add duckdb --transport stdio -- uvx mcp-server-motherduck --db-path /absolute/path/to/db.duckdb --read-write
-```
-
-**MotherDuck:**
-```bash
-claude mcp add motherduck --transport stdio --env motherduck_token=YOUR_TOKEN -- uvx mcp-server-motherduck --db-path md:
+claude mcp add motherduck --transport stdio --env motherduck_token=YOUR_TOKEN -- uvx mcp-server-motherduck --db-path md: --read-write
 ```
 
 **Scoping options:**
@@ -116,26 +116,6 @@ claude mcp add motherduck --transport stdio --env motherduck_token=YOUR_TOKEN --
 claude mcp list          # List configured servers
 claude mcp remove duckdb # Remove a server
 ```
-
-</details>
-
-<details>
-<summary><b>One-click install options</b></summary>
-
-**VS Code:**
-
-[![Install with UV in VS Code](https://img.shields.io/badge/VS_Code-Install_with_UV-0098FF?style=plastic)](https://insiders.vscode.dev/redirect/mcp/install?name=mcp-server-motherduck&config=%7B%22command%22%3A%22uvx%22%2C%22args%22%3A%5B%22mcp-server-motherduck%22%2C%22--db-path%22%2C%22md%3A%22%2C%22--motherduck-token%22%2C%22%24%7Binput%3Amotherduck_token%7D%22%5D%7D&inputs=%5B%7B%22type%22%3A%22promptString%22%2C%22id%22%3A%22motherduck_token%22%2C%22description%22%3A%22MotherDuck+Token%22%2C%22password%22%3Atrue%7D%5D) [![Install with UV in VS Code Insiders](https://img.shields.io/badge/VS_Code_Insiders-Install_with_UV-24bfa5?style=plastic&logoColor=white)](https://insiders.vscode.dev/redirect/mcp/install?name=mcp-server-motherduck&config=%7B%22command%22%3A%22uvx%22%2C%22args%22%3A%5B%22mcp-server-motherduck%22%2C%22--db-path%22%2C%22md%3A%22%2C%22--motherduck-token%22%2C%22%24%7Binput%3Amotherduck_token%7D%22%5D%7D&inputs=%5B%7B%22type%22%3A%22promptString%22%2C%22id%22%3A%22motherduck_token%22%2C%22description%22%3A%22MotherDuck+Token%22%2C%22password%22%3Atrue%7D%5D&quality=insiders)
-
-**Cursor:**
-
-[<img src="https://cursor.com/deeplink/mcp-install-dark.svg" alt="Install in Cursor">](https://cursor.com/en/install-mcp?name=DuckDB&config=eyJjb21tYW5kIjoidXZ4IG1jcC1zZXJ2ZXItbW90aGVyZHVjayAtLWRiLXBhdGggOm1lbW9yeTogLS1yZWFkLXdyaXRlIC0tYWxsb3ctc3dpdGNoLWRhdGFiYXNlcyIsImVudiI6e319)
-
-</details>
-
-<details>
-<summary><b>Other clients (Windsurf, etc.)</b></summary>
-
-Any MCP-compatible client can use this server. Add the JSON configuration from Quick Start to your client's MCP config file. Consult your client's documentation for the config file location.
 
 </details>
 
@@ -155,9 +135,9 @@ All tools return JSON. Results are limited to 1024 rows / 50,000 chars by defaul
 
 ## Securing for Production
 
-**Read-only mode alone is not sufficient for production security** — it still allows access to the local filesystem, changing DuckDB settings, and other potentially sensitive operations.
+When giving third parties access to a self-hosted MCP server, **read-only mode alone is not sufficient** — it still allows access to the local filesystem, changing DuckDB settings, and other potentially sensitive operations.
 
-For production deployments, we recommend **[MotherDuck Remote MCP](https://motherduck.com/docs/sql-reference/mcp/)** — zero-setup, read-only, and hosted by MotherDuck.
+For production deployments with third-party access, we recommend **[MotherDuck Remote MCP](https://motherduck.com/docs/sql-reference/mcp/)** — zero-setup, read-only, and hosted by MotherDuck.
 
 **Self-hosting MotherDuck MCP:** Fork this repo and customize as needed. Use a **[service account](https://motherduck.com/docs/key-tasks/service-accounts-guide/)** with **[read-scaling tokens](https://motherduck.com/docs/key-tasks/authenticating-and-connecting-to-motherduck/read-scaling/#creating-a-read-scaling-token)** and enable **[SaaS mode](https://motherduck.com/docs/key-tasks/authenticating-and-connecting-to-motherduck/authenticating-to-motherduck/#authentication-using-saas-mode)** to restrict local file access.
 
