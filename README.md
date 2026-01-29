@@ -12,7 +12,7 @@
 
 Connect AI assistants to your data using DuckDB's powerful analytical SQL engine. Supports connecting to local DuckDB files, in-memory databases, S3-hosted databases, and MotherDuck. Allows executing SQL read- and write-queries, browsing database catalogs, and switching between different database connections on-the-fly.
 
-> Looking for the fully-managed remote MCP server for MotherDuck? **[Go here](https://motherduck.com/docs/sql-reference/mcp/)**
+**Looking for a fully-managed remote MCP server for MotherDuck?** → [Go to the MotherDuck Remote MCP docs](https://motherduck.com/docs/sql-reference/mcp/)
 
 ### Remote vs Local MCP
 
