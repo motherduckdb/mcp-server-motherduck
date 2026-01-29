@@ -16,10 +16,10 @@ A local MCP server that interacts with DuckDB and MotherDuck databases, providin
 
 | | **Remote MCP** | **Local MCP** (this repo) |
 |---|---|---|
-| **Hosting** | Hosted by MotherDuck | Run locally/self-hosted |
+| **Hosting** | Hosted by MotherDuck | Runs locally/self-hosted |
 | **Setup** | Zero-setup | Requires local installation |
 | **Access** | Read-only | Read-write supported |
-| **Local filesystem** | No | Yes — connect to local DuckDB files, query across local and remote data, ingest local data to MotherDuck |
+| **Local filesystem** | - | Query across local and remote databases, ingest data from / export data to local filesystem |
 
 **→ [Remote MCP docs](https://motherduck.com/docs/sql-reference/mcp/)** (recommended default for most users)
 
