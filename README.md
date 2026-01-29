@@ -12,16 +12,16 @@
 
 Connect AI assistants to your data using DuckDB's powerful analytical SQL engine. Supports connecting to local DuckDB files, in-memory databases, S3-hosted databases, and MotherDuck. Allows executing SQL read- and write-queries, browsing database catalogs, and switching between different database connections on-the-fly.
 
+> Looking for the fully-managed remote MCP server for MotherDuck? **[Go here](https://motherduck.com/docs/sql-reference/mcp/)**
+
 ### Remote vs Local MCP
 
-| | **Remote MCP** | **Local MCP** (this repo) |
+| | **[Remote MCP](https://motherduck.com/docs/sql-reference/mcp/)** | **Local MCP** (this repo) |
 |---|---|---|
 | **Hosting** | Hosted by MotherDuck | Runs locally/self-hosted |
 | **Setup** | Zero-setup | Requires local installation |
 | **Access** | Read-only | Read-write supported |
 | **Local filesystem** | - | Query across local and remote databases, ingest data from / export data to local filesystem |
-
-**→ [Remote MCP docs](https://motherduck.com/docs/sql-reference/mcp/)** (recommended default for most users)
 
 > ⚠️ **Read-Only by Default (since v1.0.0)**: The MotherDuck Local MCP server runs in read-only mode by default to protect against accidental data modification. Add `--read-write` to enable write access. See [Securing for Production](#securing-for-production) for more details.
 
