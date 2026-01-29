@@ -23,7 +23,7 @@ Connect AI assistants to your data using DuckDB's powerful analytical SQL engine
 
 **→ [Remote MCP docs](https://motherduck.com/docs/sql-reference/mcp/)** (recommended default for most users)
 
-> ⚠️ **Read-Only by Default**: The MotherDuck Local MCP server runs in read-only mode by default to protect against accidental data modification. Add `--read-write` to enable write access. See [Securing for Production](#securing-for-production) for more details.
+> ⚠️ **Read-Only by Default (since v1.0.0)**: The MotherDuck Local MCP server runs in read-only mode by default to protect against accidental data modification. Add `--read-write` to enable write access. See [Securing for Production](#securing-for-production) for more details.
 
 ## Quick Start
 
@@ -57,7 +57,7 @@ Full flexibility with no guardrails — read-write access and the ability to swi
 }
 ```
 
-Connects to a specific DuckDB file in read-only mode by default. You can also connect to remote DuckDB files on S3 using `s3://bucket/path.duckdb` — see [Environment Variables](#environment-variables) for S3 authentication. If you're considering third-party access, see [Securing for Production](#securing-for-production).
+Connects to a specific DuckDB file in read-only mode. Won't hold on to the file lock, so convenient to use alongside a write connection to the same DuckDB file. You can also connect to remote DuckDB files on S3 using `s3://bucket/path.duckdb` — see [Environment Variables](#environment-variables) for S3 authentication. If you're considering third-party access to the MCP, see [Securing for Production](#securing-for-production).
 
 ### Connecting to MotherDuck in Read-Write Mode
 
@@ -85,6 +85,8 @@ See [Command Line Parameters](#command-line-parameters) for more options, [Secur
 | **Claude Code** | Use CLI commands below |
 | **Cursor** | Settings → MCP → Add new global MCP server |
 | **VS Code** | `Ctrl+Shift+P` → "Preferences: Open User Settings (JSON)" |
+
+Any MCP-compatible client can use this server. Add the JSON configuration from [Quick Start](#quick-start) to your client's MCP config file. Consult your client's documentation for the config file location.
 
 <details>
 <summary><b>Claude Code setup</b></summary>
@@ -153,15 +155,13 @@ All tools return JSON. Results are limited to 1024 rows / 50,000 chars by defaul
 
 ## Securing for Production
 
+**Read-only mode alone is not sufficient for production security** — it still allows access to the local filesystem, changing DuckDB settings, and other potentially sensitive operations.
+
 For production deployments, we recommend **[MotherDuck Remote MCP](https://motherduck.com/docs/sql-reference/mcp/)** — zero-setup, read-only, and hosted by MotherDuck.
 
-For self-hosted scenarios, use a **[service account](https://motherduck.com/docs/key-tasks/service-accounts-guide/)** with **SaaS mode** and **read-scaling tokens**:
+**Self-hosting MotherDuck MCP:** Fork this repo and customize as needed. Use a **[service account](https://motherduck.com/docs/key-tasks/service-accounts-guide/)** with **[read-scaling tokens](https://motherduck.com/docs/key-tasks/authenticating-and-connecting-to-motherduck/read-scaling/#creating-a-read-scaling-token)** and enable **[SaaS mode](https://motherduck.com/docs/key-tasks/authenticating-and-connecting-to-motherduck/authenticating-to-motherduck/#authentication-using-saas-mode)** to restrict local file access.
 
-- [Service Accounts](https://motherduck.com/docs/key-tasks/service-accounts-guide/) - dedicated accounts for programmatic access
-- [Read Scaling Tokens](https://motherduck.com/docs/key-tasks/authenticating-and-connecting-to-motherduck/read-scaling/#creating-a-read-scaling-token) - tokens that restrict write capabilities
-- [SaaS Mode](https://motherduck.com/docs/key-tasks/authenticating-and-connecting-to-motherduck/authenticating-to-motherduck/#authentication-using-saas-mode) - restricts local file access
-
-For local DuckDB, use `--init-sql` to apply security settings. See the [Securing DuckDB guide](https://duckdb.org/docs/stable/operations_manual/securing_duckdb/overview) for options.
+**Self-hosting DuckDB MCP:** Use `--init-sql` to apply security settings. See the [Securing DuckDB guide](https://duckdb.org/docs/stable/operations_manual/securing_duckdb/overview) for available options.
 
 ## Command Line Parameters
 
