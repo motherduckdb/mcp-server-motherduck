@@ -122,6 +122,7 @@ def create_mcp_server(
     # Register query tool
     @mcp.tool(
         name="execute_query",
+        title="Execute Query",
         description="Execute a SQL query on the DuckDB or MotherDuck database. Unqualified table names resolve to current_database() and current_schema() automatically. Fully qualified names (database.schema.table) are only needed when connected to MotherDuck or when multiple databases are attached.",
         annotations=query_annotations,
     )
@@ -147,6 +148,7 @@ def create_mcp_server(
     # Register list_databases tool
     @mcp.tool(
         name="list_databases",
+        title="List Databases",
         description="List all databases available in the connection. Typically useful when connected to MotherDuck or when multiple databases are attached to DuckDB.",
         annotations=catalog_annotations,
     )
@@ -163,6 +165,7 @@ def create_mcp_server(
     # Register list_tables tool
     @mcp.tool(
         name="list_tables",
+        title="List Tables",
         description="List all tables and views in a database with their comments. If database is not specified, uses the current database.",
         annotations=catalog_annotations,
     )
@@ -183,6 +186,7 @@ def create_mcp_server(
     # Register list_columns tool
     @mcp.tool(
         name="list_columns",
+        title="List Columns",
         description="List all columns of a table or view with their types and comments. If database/schema are not specified, uses the current database/schema.",
         annotations=catalog_annotations,
     )
@@ -208,6 +212,7 @@ def create_mcp_server(
 
         @mcp.tool(
             name="switch_database_connection",
+            title="Switch Database Connection",
             description="Switch to a different database connection. For local files, use absolute paths only. The new connection respects the server's read-only/read-write mode. For local files, the file must exist unless create_if_not_exists=True (requires read-write mode).",
             annotations=switch_db_annotations,
         )
