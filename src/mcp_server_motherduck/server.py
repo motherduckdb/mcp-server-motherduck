@@ -15,10 +15,10 @@ from mcp.types import Icon
 from .configs import SERVER_VERSION
 from .database import DatabaseClient
 from .instructions import get_instructions
+from .tools.execute_query import execute_query as execute_query_fn
 from .tools.list_columns import list_columns as list_columns_fn
 from .tools.list_databases import list_databases as list_databases_fn
 from .tools.list_tables import list_tables as list_tables_fn
-from .tools.query import query as query_fn
 from .tools.switch_database_connection import (
     switch_database_connection as switch_database_connection_fn,
 )
@@ -123,7 +123,7 @@ def create_mcp_server(
     @mcp.tool(
         name="execute_query",
         title="Execute Query",
-        description="Execute a SQL query on the DuckDB or MotherDuck database. Unqualified table names resolve to current_database() and current_schema() automatically. Fully qualified names (database.schema.table) are only needed when connected to MotherDuck or when multiple databases are attached.",
+        description="Execute a SQL query on the DuckDB or MotherDuck database. Unqualified table names resolve to current_database() and current_schema() automatically. Fully qualified names (database.schema.table) are only needed when multiple DuckDB databases are attached or when connected to MotherDuck.",
         annotations=query_annotations,
     )
     def execute_query(sql: str) -> str:
@@ -139,7 +139,7 @@ def create_mcp_server(
         Raises:
             ValueError: If the query fails
         """
-        result = query_fn(sql, db_client)
+        result = execute_query_fn(sql, db_client)
         if not result.get("success", True):
             # Raise exception so FastMCP marks as isError=True
             raise ValueError(json.dumps(result, indent=2, default=str))
@@ -149,7 +149,7 @@ def create_mcp_server(
     @mcp.tool(
         name="list_databases",
         title="List Databases",
-        description="List all databases available in the connection. Typically useful when connected to MotherDuck or when multiple databases are attached to DuckDB.",
+        description="List all databases available in the connection. Useful when multiple DuckDB databases are attached or when connected to MotherDuck.",
         annotations=catalog_annotations,
     )
     def list_databases_tool() -> str:

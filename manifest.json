@@ -45,11 +45,11 @@
   "tools": [
     {
       "name": "execute_query",
-      "description": "Execute a SQL query. Unqualified table names resolve automatically; fully qualified names only needed for MotherDuck or multiple attached databases."
+      "description": "Execute a SQL query. Unqualified table names resolve automatically; fully qualified names only needed when multiple DuckDB databases are attached or when connected to MotherDuck."
     },
     {
       "name": "list_databases",
-      "description": "List all databases. Useful for MotherDuck or when multiple databases are attached."
+      "description": "List all databases. Useful when multiple DuckDB databases are attached or when connected to MotherDuck."
     },
     {
       "name": "list_tables",

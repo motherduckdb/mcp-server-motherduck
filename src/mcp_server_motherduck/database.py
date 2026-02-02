@@ -17,10 +17,10 @@ def _is_read_scaling_connection(conn: duckdb.DuckDBPyConnection) -> bool:
     Check if a MotherDuck connection is using read-scaling.
 
     Read-scaling connections have a duckling ID ending with .rs.{number}
-    e.g., "omni_primary.rs.3", "mcp_server.rs.0"
+    e.g., "my_database.rs.3", "app_db.rs.0"
 
     Read-write connections end with .rw
-    e.g., "omni_primary.rw", "mcp_server.rw"
+    e.g., "my_database.rw", "app_db.rw"
     """
     try:
         # __md_duckling_id() is a table function, must use FROM clause
