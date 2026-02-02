@@ -47,8 +47,7 @@ logging.basicConfig(level=logging.INFO, format="[motherduck] %(levelname)s - %(m
 @click.option(
     "--home-dir",
     default=None,
-    envvar="MCP_HOME_DIR",
-    help="(Default: env var `HOME`) Home directory for DuckDB",
+    help="Override the home directory for DuckDB (defaults to system HOME)",
 )
 @click.option(
     "--motherduck-saas-mode",

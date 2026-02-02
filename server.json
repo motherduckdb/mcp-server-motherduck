@@ -1,7 +1,7 @@
 {
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
   "name": "io.github.motherduckdb/mcp-server-motherduck",
-  "description": "Fast analytics and data processing with DuckDB and MotherDuck",
+  "description": "SQL analytics and data engineering for AI Assistants and IDEs",
   "icons": [
     {
       "src": "https://t2.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://motherduck.com&size=64",
@@ -27,15 +27,15 @@
         {
           "type": "named",
           "name": "--transport",
-          "description": "Transport type for MCP server",
+          "description": "Transport type for MCP server. Use 'http' for HTTP Streamable transport.",
           "default": "stdio",
-          "choices": ["stdio", "sse", "stream"],
+          "choices": ["stdio", "http", "sse", "stream"],
           "isRequired": false
         },
         {
           "type": "named",
           "name": "--port",
-          "description": "Port to listen on for sse and stream transport mode",
+          "description": "Port to listen on for HTTP transport",
           "default": "8000",
           "format": "number",
           "isRequired": false
@@ -43,46 +43,52 @@
         {
           "type": "named",
           "name": "--host",
-          "description": "Host to bind the MCP server for sse and stream transport mode",
+          "description": "Host to bind the MCP server",
           "default": "127.0.0.1",
           "isRequired": false
         },
         {
           "type": "named",
           "name": "--db-path",
-          "description": "Path to local DuckDB database file or MotherDuck database",
-          "default": "md:",
+          "description": "Database path: ':memory:' for in-memory, 'md:' for MotherDuck, or file/S3 path",
+          "default": ":memory:",
           "isRequired": false
         },
         {
           "type": "named",
           "name": "--motherduck-token",
-          "description": "Access token to use for MotherDuck database connections",
+          "description": "Access token for MotherDuck connections",
           "isRequired": false,
           "isSecret": true
         },
         {
           "type": "named",
-          "name": "--read-only",
-          "description": "Flag for connecting to DuckDB or MotherDuck in read-only mode",
+          "name": "--read-write",
+          "description": "Enable write access (server runs in read-only mode by default)",
+          "isRequired": false
+        },
+        {
+          "type": "named",
+          "name": "--allow-switch-databases",
+          "description": "Enable the switch_database_connection tool to change databases at runtime",
+          "isRequired": false
+        },
+        {
+          "type": "named",
+          "name": "--motherduck-saas-mode",
+          "description": "Enable SaaS mode for MotherDuck (disables local filesystem access)",
+          "isRequired": false
+        },
+        {
+          "type": "named",
+          "name": "--init-sql",
+          "description": "SQL file path or SQL string to execute on startup",
           "isRequired": false
         },
         {
           "type": "named",
           "name": "--home-dir",
           "description": "Home directory for DuckDB",
-          "isRequired": false
-        },
-        {
-          "type": "named",
-          "name": "--saas-mode",
-          "description": "Flag for connecting to MotherDuck in SaaS mode (disables filesystem and write permissions for local DuckDB)",
-          "isRequired": false
-        },
-        {
-          "type": "named",
-          "name": "--json-response",
-          "description": "Enable JSON responses for HTTP stream (only supported for stream transport)",
           "isRequired": false
         },
         {
@@ -104,22 +110,34 @@
         {
           "type": "named",
           "name": "--query-timeout",
-          "description": "Query execution timeout in seconds. Set to -1 to disable timeout",
+          "description": "Query execution timeout in seconds (-1 to disable)",
           "default": "-1",
           "format": "number",
+          "isRequired": false
+        },
+        {
+          "type": "named",
+          "name": "--ephemeral-connections",
+          "description": "Use temporary connections for read-only local DuckDB files (default: true)",
           "isRequired": false
         }
       ],
       "environmentVariables": [
         {
           "name": "motherduck_token",
-          "description": "Access token to use for MotherDuck database connections",
+          "description": "Access token for MotherDuck connections (alternative to --motherduck-token)",
+          "isRequired": false,
+          "isSecret": true
+        },
+        {
+          "name": "MOTHERDUCK_TOKEN",
+          "description": "Access token for MotherDuck connections (alternative to --motherduck-token)",
           "isRequired": false,
           "isSecret": true
         },
         {
           "name": "HOME",
-          "description": "Home directory for DuckDB (used as default if --home-dir not specified)",
+          "description": "Used by DuckDB for extensions and config. Override with --home-dir if not set.",
           "isRequired": false
         },
         {
@@ -136,7 +154,7 @@
         },
         {
           "name": "AWS_SESSION_TOKEN",
-          "description": "AWS session token for temporary credentials (IAM roles, AWS SSO, EC2 instance profiles)",
+          "description": "AWS session token for temporary credentials",
           "isRequired": false,
           "isSecret": true
         },

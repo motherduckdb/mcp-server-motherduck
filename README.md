@@ -158,6 +158,7 @@ For production deployments with third-party access, we recommend **[MotherDuck R
 | Variable | Description |
 |----------|-------------|
 | `motherduck_token` or `MOTHERDUCK_TOKEN` | MotherDuck access token (alternative to `--motherduck-token`) |
+| `HOME` | Used by DuckDB for extensions and config. Override with `--home-dir` if not set. |
 | `AWS_ACCESS_KEY_ID` | AWS access key for S3 database connections |
 | `AWS_SECRET_ACCESS_KEY` | AWS secret key for S3 database connections |
 | `AWS_SESSION_TOKEN` | AWS session token for temporary credentials (IAM roles, SSO, EC2 instance profiles) |
