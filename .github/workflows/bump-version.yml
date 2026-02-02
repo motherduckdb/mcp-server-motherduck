@@ -81,16 +81,58 @@ jobs:
     uses: ./.github/workflows/publish-mcp.yml
     secrets: inherit
 
-  create-release:
+  build-mcpb:
     needs: [bump-version, call-publish]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      mcpb_file: ${{ steps.build.outputs.mcpb_file }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: v${{ needs.bump-version.outputs.new_version }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install MCPB CLI
+        run: npm install -g @anthropic-ai/mcpb
+
+      - name: Build MCPB bundle
+        id: build
+        run: |
+          mcpb pack
+          MCPB_FILE=$(ls *.mcpb)
+          echo "mcpb_file=$MCPB_FILE" >> $GITHUB_OUTPUT
+          echo "Built MCPB bundle: $MCPB_FILE"
+
+      - name: Upload MCPB artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: mcpb-bundle
+          path: "*.mcpb"
+
+  create-release:
+    needs: [bump-version, call-publish, build-mcpb]
     runs-on: ubuntu-latest
     permissions:
       contents: write
     steps:
+      - name: Download MCPB artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: mcpb-bundle
+
       - name: Create GitHub Release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           gh release create "v${{ needs.bump-version.outputs.new_version }}" \
+            --repo ${{ github.repository }} \
             --title "v${{ needs.bump-version.outputs.new_version }}" \
-            --generate-notes
+            --generate-notes \
+            *.mcpb

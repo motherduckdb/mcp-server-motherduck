@@ -1,0 +1,47 @@
+name: E2E Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  e2e:
+    name: E2E Tests
+    runs-on: ubuntu-latest
+    # Only run on main branch pushes or manual trigger to avoid using secrets on untrusted PRs
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+      
+      - name: Install dependencies
+        run: uv sync --all-extras
+      
+      - name: Create test database
+        env:
+          MOTHERDUCK_TOKEN_READ_SCALING: ${{ secrets.MOTHERDUCK_TOKEN_READ_SCALING }}
+        run: uv run python tests/e2e/fixtures/create_test_db.py
+      
+      - name: Run E2E tests
+        env:
+          MOTHERDUCK_TOKEN: ${{ secrets.MOTHERDUCK_TOKEN }}
+          MOTHERDUCK_TOKEN_READ_SCALING: ${{ secrets.MOTHERDUCK_TOKEN_READ_SCALING }}
+          S3_TEST_DB_PATH: s3://md-test-bucket-user-1/test-mcp/test.duckdb
+          AWS_ACCESS_KEY_ID: ${{ secrets.E2E_USER_1_AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.E2E_USER_1_AWS_SECRET_ACCESS_KEY }}
+        run: |
+          uv run pytest tests/e2e/ -v -m "not slow"

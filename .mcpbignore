@@ -1,0 +1,42 @@
+# Virtual environments
+.venv/
+venv/
+server/lib/
+server/venv/
+
+# Secrets and local config
+.mcpregistry_*
+.env
+.env.*
+.python-version
+
+# Build artifacts
+dist/
+build/
+*.egg-info/
+
+# Test files and temp
+tests/
+tmp/
+
+# Git
+.git/
+.gitignore
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# Cache
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+
+# Other
+*.mcpb
+.github/
+.pre-commit-config.yaml
+uv.lock
+makefile
