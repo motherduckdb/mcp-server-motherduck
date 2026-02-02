@@ -8,6 +8,7 @@ dependencies = [
     "duckdb==1.4.4",
     "fastmcp>=2.14,<3",
     "click>=8.1.8",
+    "pytz>=2025.2",
 ]
 
 [[project.authors]]
