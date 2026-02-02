@@ -166,7 +166,7 @@ class TestSwitchDatabaseConnectionReadOnlyServer:
 
     @pytest.mark.asyncio
     async def test_server_read_only_mode(self, tmp_path):
-        """Server --read-only flag is respected by switch_database_connection."""
+        """Server read-only mode is respected by switch_database_connection."""
         from fastmcp import Client
 
         from mcp_server_motherduck.server import create_mcp_server
@@ -200,6 +200,57 @@ class TestSwitchDatabaseConnectionReadOnlyServer:
             # Should succeed and be read-only (respects server mode)
             assert data["success"] is True
             assert data["readOnly"] is True
+
+    @pytest.mark.asyncio
+    async def test_switched_database_blocks_writes_in_readonly_mode(self, tmp_path):
+        """Switched database should block writes when server is in read-only mode."""
+        from fastmcp import Client
+
+        from mcp_server_motherduck.server import create_mcp_server
+
+        # Create test databases
+        initial_db = tmp_path / "initial.duckdb"
+        conn = duckdb.connect(str(initial_db))
+        conn.execute("CREATE TABLE init (id INTEGER)")
+        conn.close()
+
+        target_db = tmp_path / "target.duckdb"
+        conn = duckdb.connect(str(target_db))
+        conn.execute("CREATE TABLE target (id INTEGER)")
+        conn.close()
+
+        # Create server in read-only mode with switch enabled
+        mcp = create_mcp_server(
+            db_path=str(initial_db),
+            read_only=True,  # Server is read-only
+            allow_switch_databases=True,
+        )
+
+        async with Client(mcp) as client:
+            # Switch to target database
+            switch_result = await client.call_tool_mcp(
+                "switch_database_connection",
+                {"path": str(target_db)},
+            )
+            switch_data = parse_json_result(switch_result)
+            assert switch_data["success"] is True
+            assert switch_data["readOnly"] is True
+
+            # Verify reads work on switched database
+            read_result = await client.call_tool_mcp(
+                "execute_query",
+                {"sql": "SELECT * FROM target"},
+            )
+            assert read_result.isError is False
+
+            # Attempt to write - should be blocked
+            write_result = await client.call_tool_mcp(
+                "execute_query",
+                {"sql": "INSERT INTO target VALUES (1)"},
+            )
+            assert write_result.isError is True
+            text = get_result_text(write_result)
+            assert "read" in text.lower() or "not allowed" in text.lower()
 
 
 class TestSwitchDatabaseConnectionToolAvailability:

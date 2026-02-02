@@ -86,13 +86,13 @@ async def test_create_table_in_my_db(motherduck_client):
 
     result = await motherduck_client.call_tool_mcp(
         "execute_query",
-        {"execute_query": f"CREATE TABLE IF NOT EXISTS {table_name} (id INT, data VARCHAR)"},
+        {"sql": f"CREATE TABLE IF NOT EXISTS {table_name} (id INT, data VARCHAR)"},
     )
     assert result.isError is False
 
     # Clean up
     await motherduck_client.call_tool_mcp(
-        "execute_query", {"execute_query": f"DROP TABLE IF EXISTS {table_name}"}
+        "execute_query", {"sql": f"DROP TABLE IF EXISTS {table_name}"}
     )
 
 
