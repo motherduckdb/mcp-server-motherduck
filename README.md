@@ -2,7 +2,7 @@
   <img src="src/mcp_server_motherduck/assets/duck_feet_square.png" alt="MotherDuck / DuckDB Local MCP Server" width="120">
 </p>
 
-<h1 align="center">MotherDuck / DuckDB Local MCP Server</h1>
+<h1 align="center">DuckDB / MotherDuck Local MCP Server</h1>
 
 <p align="center">
   SQL analytics and data engineering for AI Assistants and IDEs.
