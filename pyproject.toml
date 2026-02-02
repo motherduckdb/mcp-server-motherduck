@@ -30,9 +30,6 @@ build-backend = "hatchling.build"
 [tool.hatch.build.targets.wheel]
 packages = ["src/mcp_server_motherduck"]
 
-[tool.hatch.build.targets.wheel.force-include]
-"src/mcp_server_motherduck/assets" = "mcp_server_motherduck/assets"
-
 [project.scripts]
 mcp-server-motherduck = "mcp_server_motherduck:main"
 
