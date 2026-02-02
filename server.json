@@ -13,13 +13,13 @@
     "url": "https://github.com/motherduckdb/mcp-server-motherduck",
     "source": "github"
   },
-  "version": "0.8.1",
+  "version": "1.0.0",
   "packages": [
     {
       "registryType": "pypi",
       "registryBaseUrl": "https://pypi.org",
       "identifier": "mcp-server-motherduck",
-      "version": "0.8.1",
+      "version": "1.0.0",
       "transport": {
         "type": "stdio"
       },
