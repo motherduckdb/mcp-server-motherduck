@@ -23,7 +23,10 @@ Connect AI assistants to your data using DuckDB's powerful analytical SQL engine
 | **Access** | Read-only | Read-write supported |
 | **Local filesystem** | - | Query across local and remote databases, ingest data from / export data to local filesystem |
 
-> ⚠️ **Read-Only by Default (since v1.0.0)**: The local MCP server runs in read-only mode by default to protect against accidental data modification. Add `--read-write` to enable write access. See [Securing for Production](#securing-for-production) for more details.
+> 📝 **Migrating from v0.x?**
+> - **Read-only by default**: The server now runs in read-only mode by default. Add `--read-write` to enable write access. See [Securing for Production](#securing-for-production).
+> - **Default database changed**: `--db-path` default changed from `md:` to `:memory:`. Add `--db-path md:` explicitly for MotherDuck.
+> - **MotherDuck read-only requires read-scaling token**: MotherDuck connections in read-only mode require a [read-scaling token](https://motherduck.com/docs/key-tasks/authenticating-and-connecting-to-motherduck/authenticating-to-motherduck/#read-scaling-tokens). Regular tokens require `--read-write`.
 
 ## Quick Start
 
@@ -84,7 +87,7 @@ See [Command Line Parameters](#command-line-parameters) for more options, [Secur
 | **Claude Desktop** | Settings → Developer → Edit Config, or install [MCPB package](https://github.com/motherduckdb/mcp-server-motherduck/releases) | - |
 | **Claude Code** | Use CLI commands below | - |
 | **Cursor** | Settings → MCP → Add new global MCP server | [<img src="https://cursor.com/deeplink/mcp-install-dark.svg" alt="Install in Cursor" height="20">](https://cursor.com/en/install-mcp?name=DuckDB&config=eyJjb21tYW5kIjoidXZ4IG1jcC1zZXJ2ZXItbW90aGVyZHVjayAtLWRiLXBhdGggOm1lbW9yeTogLS1yZWFkLXdyaXRlIC0tYWxsb3ctc3dpdGNoLWRhdGFiYXNlcyIsImVudiI6e319) |
-| **VS Code** | `Ctrl+Shift+P` → "Preferences: Open User Settings (JSON)" | [![Install with UV in VS Code](https://img.shields.io/badge/VS_Code-Install-0098FF?style=flat-square)](https://insiders.vscode.dev/redirect/mcp/install?name=mcp-server-motherduck&config=%7B%22command%22%3A%22uvx%22%2C%22args%22%3A%5B%22mcp-server-motherduck%22%2C%22--db-path%22%2C%22md%3A%22%2C%22--motherduck-token%22%2C%22%24%7Binput%3Amotherduck_token%7D%22%5D%7D&inputs=%5B%7B%22type%22%3A%22promptString%22%2C%22id%22%3A%22motherduck_token%22%2C%22description%22%3A%22MotherDuck+Token%22%2C%22password%22%3Atrue%7D%5D) |
+| **VS Code** | `Ctrl+Shift+P` → "Preferences: Open User Settings (JSON)" | [![Install with UV in VS Code](https://img.shields.io/badge/VS_Code-Install-0098FF?style=flat-square)](https://insiders.vscode.dev/redirect/mcp/install?name=mcp-server-motherduck&config=%7B%22command%22%3A%22uvx%22%2C%22args%22%3A%5B%22mcp-server-motherduck%22%2C%22--db-path%22%2C%22%3Amemory%3A%22%2C%22--read-write%22%2C%22--allow-switch-databases%22%5D%7D) |
 
 Any MCP-compatible client can use this server. Add the JSON configuration from [Quick Start](#quick-start) to your client's MCP config file. Consult your client's documentation for the config file location.
 

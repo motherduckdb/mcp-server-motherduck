@@ -101,6 +101,25 @@ logging.basicConfig(level=logging.INFO, format="[motherduck] %(levelname)s - %(m
     envvar="MCP_ALLOW_SWITCH_DATABASES",
     help="Enable the switch_database_connection tool to change databases at runtime. Disabled by default.",
 )
+# Backwards compatibility aliases (deprecated)
+@click.option(
+    "--saas-mode",
+    is_flag=True,
+    hidden=True,
+    help="[DEPRECATED] Use --motherduck-saas-mode instead.",
+)
+@click.option(
+    "--read-only",
+    is_flag=True,
+    hidden=True,
+    help="[DEPRECATED] Read-only is now the default. Use --read-write for write access.",
+)
+@click.option(
+    "--json-response",
+    is_flag=True,
+    hidden=True,
+    help="[DEPRECATED] No longer needed, JSON responses are automatic.",
+)
 def main(
     port: int,
     host: str,
@@ -116,13 +135,50 @@ def main(
     query_timeout: int,
     init_sql: str | None,
     allow_switch_databases: bool,
+    # Deprecated args
+    saas_mode: bool,
+    read_only: bool,
+    json_response: bool,
 ) -> None:
     """MotherDuck MCP Server - Execute SQL queries via DuckDB/MotherDuck."""
+    # Handle deprecated flags with warnings
+    if saas_mode:
+        warnings.warn(
+            "The '--saas-mode' flag is deprecated. Use '--motherduck-saas-mode' instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        logger.warning("⚠️  '--saas-mode' is deprecated. Use '--motherduck-saas-mode' instead.")
+        motherduck_saas_mode = True
+
+    if read_only:
+        warnings.warn(
+            "The '--read-only' flag is deprecated. Read-only is now the default. "
+            "Use '--read-write' for write access.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        logger.warning(
+            "⚠️  '--read-only' is deprecated. Read-only is now the default. "
+            "Remove '--read-only' from your config."
+        )
+        # read_only flag is effectively a no-op now since default is read-only
+
+    if json_response:
+        warnings.warn(
+            "The '--json-response' flag is deprecated and no longer needed.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        logger.warning(
+            "⚠️  '--json-response' is deprecated and no longer needed. Remove it from your config."
+        )
+
     # Convert read_write flag to read_only (inverted logic)
-    read_only = not read_write
+    actual_read_only = not read_write
 
     # In-memory databases require --read-write flag since read-only doesn't apply
-    if db_path == ":memory:" and read_only:
+    if db_path == ":memory:" and actual_read_only:
         raise click.UsageError(
             "In-memory databases require the --read-write flag.\n"
             "Options:\n"
@@ -136,8 +192,8 @@ def main(
     if db_path == ":memory:":
         logger.info("Database mode: in-memory (read-write)")
     else:
-        mode_str = "read-write" if read_write else "read-only"
-        if not read_write and not ephemeral_connections:
+        mode_str = "read-write" if not actual_read_only else "read-only"
+        if actual_read_only and not ephemeral_connections:
             mode_str += " (persistent connection)"
         logger.info(f"Database mode: {mode_str}")
     logger.info(f"Query result limits: {max_rows} rows, {max_chars:,} characters")
@@ -174,7 +230,7 @@ def main(
         motherduck_token=motherduck_token,
         home_dir=home_dir,
         saas_mode=motherduck_saas_mode,
-        read_only=read_only,
+        read_only=actual_read_only,
         ephemeral_connections=ephemeral_connections,
         max_rows=max_rows,
         max_chars=max_chars,
