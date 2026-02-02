@@ -2,7 +2,17 @@ name: Publish to PyPI and MCP Registry
 
 on:
   workflow_dispatch:  # Allows manual triggering from GitHub Actions UI
+    inputs:
+      ref:
+        description: 'Git ref to checkout (tag, branch, or SHA)'
+        required: false
+        type: string
   workflow_call:  # Allows triggering from other workflows
+    inputs:
+      ref:
+        description: 'Git ref to checkout (tag, branch, or SHA)'
+        required: false
+        type: string
 
 jobs:
   publish:
@@ -14,6 +24,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref || github.ref }}
       
       - name: Setup Python
         uses: actions/setup-python@v5
@@ -72,4 +84,14 @@ jobs:
         run: ./mcp-publisher login github-oidc
       
       - name: Publish to MCP Registry
-        run: ./mcp-publisher publish
+        run: |
+          ./mcp-publisher publish 2>&1 | tee mcp_output.txt
+          exit_code=${PIPESTATUS[0]}
+          if [ $exit_code -eq 0 ]; then
+            echo "✅ Successfully published to MCP Registry"
+          elif grep -q "duplicate version" mcp_output.txt; then
+            echo "⚠️ Version already exists in MCP Registry, skipping..."
+          else
+            echo "❌ Failed to publish to MCP Registry"
+            exit 1
+          fi

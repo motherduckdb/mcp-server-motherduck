@@ -79,6 +79,8 @@ jobs:
   call-publish:
     needs: bump-version
     uses: ./.github/workflows/publish-mcp.yml
+    with:
+      ref: v${{ needs.bump-version.outputs.new_version }}
     secrets: inherit
 
   build-mcpb:
