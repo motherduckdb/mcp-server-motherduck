@@ -2,7 +2,7 @@
   "manifest_version": "0.4",
   "name": "mcp-server-motherduck",
   "display_name": "DuckDB / MotherDuck (local)",
-  "version": "1.0.0",
+  "version": "0.8.1",
   "description": "SQL analytics and data engineering for AI Assistants and IDEs.",
   "long_description": "Connect AI assistants to your data using DuckDB's powerful analytical SQL engine. Supports connecting to local DuckDB files, in-memory databases, S3-hosted databases, and MotherDuck. Allows executing SQL read- and write-queries, browsing database catalogs, and switching between different database connections on-the-fly.",
   "author": {
