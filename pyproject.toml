@@ -1,6 +1,6 @@
 [project]
 name = "mcp-server-motherduck"
-version = "1.0.0"
+version = "0.8.1"
 description = "A MCP server for MotherDuck and local DuckDB"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -53,7 +53,7 @@ select = ["E", "F", "I", "W"]
 ignore = ["E501"]
 
 [tool.bumpver]
-current_version = "1.0.0"
+current_version = "0.8.1"
 version_pattern = "MAJOR.MINOR.PATCH"
 commit = false
 tag = false
