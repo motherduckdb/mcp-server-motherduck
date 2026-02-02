@@ -1,8 +1,8 @@
 <p align="center">
-  <img src="src/mcp_server_motherduck/assets/duck_feet_square.png" alt="MotherDuck Local MCP Server" width="120">
+  <img src="src/mcp_server_motherduck/assets/duck_feet_square.png" alt="MotherDuck / DuckDB Local MCP Server" width="120">
 </p>
 
-<h1 align="center">MotherDuck Local MCP Server</h1>
+<h1 align="center">MotherDuck / DuckDB Local MCP Server</h1>
 
 <p align="center">
   SQL analytics and data engineering for AI Assistants and IDEs.
@@ -23,7 +23,7 @@ Connect AI assistants to your data using DuckDB's powerful analytical SQL engine
 | **Access** | Read-only | Read-write supported |
 | **Local filesystem** | - | Query across local and remote databases, ingest data from / export data to local filesystem |
 
-> ⚠️ **Read-Only by Default (since v1.0.0)**: The MotherDuck Local MCP server runs in read-only mode by default to protect against accidental data modification. Add `--read-write` to enable write access. See [Securing for Production](#securing-for-production) for more details.
+> ⚠️ **Read-Only by Default (since v1.0.0)**: The local MCP server runs in read-only mode by default to protect against accidental data modification. Add `--read-write` to enable write access. See [Securing for Production](#securing-for-production) for more details.
 
 ## Quick Start
 
@@ -34,7 +34,7 @@ Connect AI assistants to your data using DuckDB's powerful analytical SQL engine
 ```json
 {
   "mcpServers": {
-    "DuckDB In-Memory (R/W)": {
+    "DuckDB (in-memory, r/w)": {
       "command": "uvx",
       "args": ["mcp-server-motherduck", "--db-path", ":memory:", "--read-write", "--allow-switch-databases"]
     }
@@ -49,7 +49,7 @@ Full flexibility with no guardrails — read-write access and the ability to swi
 ```json
 {
   "mcpServers": {
-    "DuckDB": {
+    "DuckDB (read-only)": {
       "command": "uvx",
       "args": ["mcp-server-motherduck", "--db-path", "/absolute/path/to/your.duckdb"]
     }
@@ -64,7 +64,7 @@ Connects to a specific DuckDB file in read-only mode. Won't hold on to the file 
 ```json
 {
   "mcpServers": {
-    "MotherDuck Local (R/W)": {
+    "MotherDuck (local, r/w)": {
       "command": "uvx",
       "args": ["mcp-server-motherduck", "--db-path", "md:", "--read-write"],
       "env": {
