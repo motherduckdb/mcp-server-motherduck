@@ -30,7 +30,20 @@ logging.basicConfig(level=logging.INFO, format="[motherduck] %(levelname)s - %(m
     type=click.Choice(["stdio", "http", "sse", "stream"]),
     default="stdio",
     envvar="MCP_TRANSPORT",
-    help="(Default: `stdio`) Transport type. Use `http` for HTTP Streamable transport. `sse` and `stream` are deprecated aliases.",
+    help=(
+        "(Default: `stdio`) Transport type. Use `http` for Streamable HTTP transport. "
+        "Use `--stateless-http` for platforms that inject Mcp-Session-Id (e.g. AgentCore). "
+        "`sse` and `stream` are deprecated aliases."
+    ),
+)
+@click.option(
+    "--stateless-http",
+    is_flag=True,
+    envvar="MCP_STATELESS_HTTP",
+    help=(
+        "Use stateless Streamable HTTP when --transport http. Required for platforms "
+        "that inject Mcp-Session-Id (e.g. AWS Bedrock AgentCore Runtime)."
+    ),
 )
 @click.option(
     "--db-path",
@@ -123,6 +136,7 @@ def main(
     port: int,
     host: str,
     transport: str,
+    stateless_http: bool,
     db_path: str,
     motherduck_token: str | None,
     home_dir: str | None,
@@ -240,11 +254,14 @@ def main(
 
     # Run the server with the appropriate transport
     if transport == "http":
-        logger.info("MCP server initialized in \033[32mhttp\033[0m mode")
+        if stateless_http:
+            logger.info("MCP server initialized in \033[32mhttp\033[0m mode (stateless http)")
+        else:
+            logger.info("MCP server initialized in \033[32mhttp\033[0m mode")
         logger.info(
             f"🦆 Connect to MotherDuck MCP Server at \033[1m\033[36mhttp://{host}:{port}/mcp\033[0m"
         )
-        mcp.run(transport="http", host=host, port=port)
+        mcp.run(transport="http", host=host, port=port, stateless_http=stateless_http)
     else:
         logger.info("MCP server initialized in \033[32mstdio\033[0m mode")
         logger.info("Waiting for client connection")
