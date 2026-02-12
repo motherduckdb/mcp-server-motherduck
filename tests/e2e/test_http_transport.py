@@ -332,6 +332,273 @@ class TestHttpTransport:
 
 
 # =============================================================================
+# Stateless HTTP Tests
+# =============================================================================
+
+
+class TestStatelessHttp:
+    """Tests for --stateless-http mode.
+
+    In stateless mode the server does not manage sessions itself, allowing
+    platforms that inject their own Mcp-Session-Id (e.g. AWS Bedrock AgentCore)
+    to work correctly.
+    """
+
+    def test_stateless_server_starts(self, memory_db):
+        """Stateless HTTP server starts and accepts connections."""
+        port = find_free_port()
+        with MCPHttpServer("http", memory_db, port, extra_args=["--stateless-http"]) as server:
+            with httpx.Client(follow_redirects=True) as client:
+                response = server.post_mcp(
+                    client,
+                    {
+                        "jsonrpc": "2.0",
+                        "method": "initialize",
+                        "params": {
+                            "protocolVersion": "2024-11-05",
+                            "capabilities": {},
+                            "clientInfo": {"name": "test", "version": "1.0"},
+                        },
+                        "id": 1,
+                    },
+                )
+                assert response.status_code in [200, 202]
+
+    def test_stateless_no_session_id_returned(self, memory_db):
+        """Stateless mode does not return an Mcp-Session-Id header."""
+        port = find_free_port()
+        with MCPHttpServer("http", memory_db, port, extra_args=["--stateless-http"]) as server:
+            with httpx.Client(follow_redirects=True) as client:
+                response = server.post_mcp(
+                    client,
+                    {
+                        "jsonrpc": "2.0",
+                        "method": "initialize",
+                        "params": {
+                            "protocolVersion": "2024-11-05",
+                            "capabilities": {},
+                            "clientInfo": {"name": "test", "version": "1.0"},
+                        },
+                        "id": 1,
+                    },
+                )
+                assert response.status_code in [200, 202]
+                assert response.headers.get("Mcp-Session-Id") is None
+
+    def test_stateless_tools_list_without_session(self, memory_db):
+        """Can list tools without a session ID in stateless mode."""
+        port = find_free_port()
+        with MCPHttpServer("http", memory_db, port, extra_args=["--stateless-http"]) as server:
+            with httpx.Client(follow_redirects=True) as client:
+                # Initialize (no session tracking needed)
+                server.post_mcp(
+                    client,
+                    {
+                        "jsonrpc": "2.0",
+                        "method": "initialize",
+                        "params": {
+                            "protocolVersion": "2024-11-05",
+                            "capabilities": {},
+                            "clientInfo": {"name": "test", "version": "1.0"},
+                        },
+                        "id": 1,
+                    },
+                )
+
+                # List tools without any session ID
+                response = server.post_mcp(
+                    client,
+                    {"jsonrpc": "2.0", "method": "tools/list", "id": 2},
+                )
+                assert response.status_code in [200, 202]
+
+    def test_stateless_call_tool(self, memory_db):
+        """Can call a tool in stateless mode without session tracking."""
+        port = find_free_port()
+        with MCPHttpServer("http", memory_db, port, extra_args=["--stateless-http"]) as server:
+            with httpx.Client(follow_redirects=True) as client:
+                # Initialize
+                server.post_mcp(
+                    client,
+                    {
+                        "jsonrpc": "2.0",
+                        "method": "initialize",
+                        "params": {
+                            "protocolVersion": "2024-11-05",
+                            "capabilities": {},
+                            "clientInfo": {"name": "test", "version": "1.0"},
+                        },
+                        "id": 1,
+                    },
+                )
+
+                # Call tool without session ID
+                response = server.post_mcp(
+                    client,
+                    {
+                        "jsonrpc": "2.0",
+                        "method": "tools/call",
+                        "params": {
+                            "name": "execute_query",
+                            "arguments": {"sql": "SELECT 1 as num"},
+                        },
+                        "id": 2,
+                    },
+                )
+                assert response.status_code in [200, 202]
+
+    def test_stateless_accepts_external_session_id(self, memory_db):
+        """Stateless mode accepts an externally-injected Mcp-Session-Id.
+
+        This is the key use-case: platforms like AWS Bedrock AgentCore inject
+        their own session ID into every request.
+        """
+        port = find_free_port()
+        with MCPHttpServer("http", memory_db, port, extra_args=["--stateless-http"]) as server:
+            with httpx.Client(follow_redirects=True) as client:
+                external_session = "external-platform-session-abc123"
+
+                # Initialize with external session ID
+                init_response = server.post_mcp(
+                    client,
+                    {
+                        "jsonrpc": "2.0",
+                        "method": "initialize",
+                        "params": {
+                            "protocolVersion": "2024-11-05",
+                            "capabilities": {},
+                            "clientInfo": {"name": "test", "version": "1.0"},
+                        },
+                        "id": 1,
+                    },
+                    session_id=external_session,
+                )
+                assert init_response.status_code in [200, 202]
+
+                # Call tool with the same external session ID
+                response = server.post_mcp(
+                    client,
+                    {
+                        "jsonrpc": "2.0",
+                        "method": "tools/call",
+                        "params": {
+                            "name": "execute_query",
+                            "arguments": {"sql": "SELECT 42 as answer"},
+                        },
+                        "id": 2,
+                    },
+                    session_id=external_session,
+                )
+                assert response.status_code in [200, 202]
+
+    def test_stateless_different_session_ids_work(self, memory_db):
+        """Different external session IDs can be used across requests.
+
+        In stateless mode each request is independent, so changing the
+        session ID between requests should not cause errors.
+        """
+        port = find_free_port()
+        with MCPHttpServer("http", memory_db, port, extra_args=["--stateless-http"]) as server:
+            with httpx.Client(follow_redirects=True) as client:
+                # Initialize with one session ID
+                server.post_mcp(
+                    client,
+                    {
+                        "jsonrpc": "2.0",
+                        "method": "initialize",
+                        "params": {
+                            "protocolVersion": "2024-11-05",
+                            "capabilities": {},
+                            "clientInfo": {"name": "test", "version": "1.0"},
+                        },
+                        "id": 1,
+                    },
+                    session_id="session-aaa",
+                )
+
+                # Call tool with a completely different session ID
+                response = server.post_mcp(
+                    client,
+                    {
+                        "jsonrpc": "2.0",
+                        "method": "tools/call",
+                        "params": {
+                            "name": "execute_query",
+                            "arguments": {"sql": "SELECT 99 as val"},
+                        },
+                        "id": 2,
+                    },
+                    session_id="session-bbb",
+                )
+                assert response.status_code in [200, 202]
+
+    def test_stateless_env_var_activation(self, memory_db):
+        """Stateless mode can be activated via MCP_STATELESS_HTTP env var."""
+        port = find_free_port()
+        env = os.environ.copy()
+        env["motherduck_logging"] = "0"
+        env["MCP_STATELESS_HTTP"] = "1"
+
+        cmd = [
+            "uv",
+            "run",
+            "mcp-server-motherduck",
+            "--transport",
+            "http",
+            "--host",
+            "127.0.0.1",
+            "--port",
+            str(port),
+            "--db-path",
+            memory_db,
+            "--read-write",
+        ]
+
+        process = subprocess.Popen(
+            cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            env=env,
+        )
+        try:
+            # Wait for server
+            start = time.time()
+            ready = False
+            while time.time() - start < 10.0:
+                try:
+                    with httpx.Client(follow_redirects=True, timeout=2.0) as client:
+                        response = client.post(
+                            f"http://127.0.0.1:{port}/mcp/",
+                            headers=MCPHttpServer.MCP_HEADERS,
+                            json={
+                                "jsonrpc": "2.0",
+                                "method": "initialize",
+                                "params": {
+                                    "protocolVersion": "2024-11-05",
+                                    "capabilities": {},
+                                    "clientInfo": {"name": "test", "version": "1.0"},
+                                },
+                                "id": 1,
+                            },
+                        )
+                        if response.status_code in [200, 202]:
+                            ready = True
+                            # Verify no session ID returned (stateless mode active)
+                            assert response.headers.get("Mcp-Session-Id") is None
+                            break
+                except (httpx.ConnectError, httpx.ReadTimeout, httpx.ReadError):
+                    pass
+                time.sleep(0.3)
+            assert ready, "Server did not start within timeout"
+        finally:
+            process.terminate()
+            try:
+                process.wait(timeout=5)
+            except subprocess.TimeoutExpired:
+                process.kill()
+
+
+# =============================================================================
 # Host Configuration Tests
 # =============================================================================
 
