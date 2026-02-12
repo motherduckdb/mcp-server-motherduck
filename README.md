@@ -150,6 +150,7 @@ For production deployments with third-party access, we recommend **[MotherDuck R
 | `--init-sql` | `None` | SQL to execute on startup |
 | `--ephemeral-connections` | `True` | Use temporary connections for read-only local files |
 | `--transport` | `stdio` | Transport type: `stdio` or `http` |
+| `--stateless-http` | `False` | For protocol compatibility only (e.g. with [AWS Bedrock AgentCore Runtime](https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/runtime-mcp-protocol-contract.html)). Server still maintains global state via the shared DatabaseClient. |
 | `--port` | `8000` | Port for HTTP transport |
 | `--host` | `127.0.0.1` | Host for HTTP transport |
 
