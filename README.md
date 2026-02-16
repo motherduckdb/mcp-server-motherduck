@@ -97,17 +97,17 @@ Any MCP-compatible client can use this server. Add the JSON configuration from [
 
 **In-Memory DuckDB (Dev Mode):**
 ```bash
-claude mcp add duckdb --transport stdio -- uvx mcp-server-motherduck --db-path :memory: --read-write --allow-switch-databases
+claude mcp add --scope user duckdb --transport stdio -- uvx mcp-server-motherduck --db-path :memory: --read-write --allow-switch-databases
 ```
 
 **Local DuckDB (Read-Only):**
 ```bash
-claude mcp add duckdb --transport stdio -- uvx mcp-server-motherduck --db-path /absolute/path/to/db.duckdb
+claude mcp add --scope user duckdb --transport stdio -- uvx mcp-server-motherduck --db-path /absolute/path/to/db.duckdb
 ```
 
 **MotherDuck (Read-Write):**
 ```bash
-claude mcp add motherduck --transport stdio --env motherduck_token=YOUR_TOKEN -- uvx mcp-server-motherduck --db-path md: --read-write
+claude mcp add --scope user motherduck --transport stdio --env motherduck_token=YOUR_TOKEN -- uvx mcp-server-motherduck --db-path md: --read-write
 ```
 
 </details>
