@@ -86,6 +86,7 @@ See [Command Line Parameters](#command-line-parameters) for more options, [Secur
 |--------|-----------------|-------------------|
 | **Claude Desktop** | Settings → Developer → Edit Config | [.mcpb (MCP Bundle)](https://github.com/motherduckdb/mcp-server-motherduck/releases/latest/download/mcp-server-motherduck.mcpb) |
 | **Claude Code** | Use CLI commands below | - |
+| **Codex CLI** | Use CLI commands below | - |
 | **Cursor** | Settings → MCP → Add new global MCP server | [<img src="https://cursor.com/deeplink/mcp-install-dark.svg" alt="Install in Cursor" height="20">](https://cursor.com/en/install-mcp?name=DuckDB&config=eyJjb21tYW5kIjoidXZ4IG1jcC1zZXJ2ZXItbW90aGVyZHVjayAtLWRiLXBhdGggOm1lbW9yeTogLS1yZWFkLXdyaXRlIC0tYWxsb3ctc3dpdGNoLWRhdGFiYXNlcyIsImVudiI6e319) |
 | **VS Code** | `Ctrl+Shift+P` → "Preferences: Open User Settings (JSON)" | [![Install with UV in VS Code](https://img.shields.io/badge/VS_Code-Install-0098FF?style=flat-square)](https://insiders.vscode.dev/redirect/mcp/install?name=mcp-server-motherduck&config=%7B%22command%22%3A%22uvx%22%2C%22args%22%3A%5B%22mcp-server-motherduck%22%2C%22--db-path%22%2C%22%3Amemory%3A%22%2C%22--read-write%22%2C%22--allow-switch-databases%22%5D%7D) |
 
@@ -107,6 +108,26 @@ claude mcp add duckdb --transport stdio -- uvx mcp-server-motherduck --db-path /
 **MotherDuck (Read-Write):**
 ```bash
 claude mcp add motherduck --transport stdio --env motherduck_token=YOUR_TOKEN -- uvx mcp-server-motherduck --db-path md: --read-write
+```
+
+</details>
+
+<details>
+<summary><b>Codex CLI commands</b></summary>
+
+**In-Memory DuckDB (Dev Mode):**
+```bash
+codex mcp add duckdb -- uvx mcp-server-motherduck --db-path :memory: --read-write --allow-switch-databases
+```
+
+**Local DuckDB (Read-Only):**
+```bash
+codex mcp add duckdb -- uvx mcp-server-motherduck --db-path /absolute/path/to/db.duckdb
+```
+
+**MotherDuck (Read-Write):**
+```bash
+codex mcp add motherduck --env motherduck_token=YOUR_TOKEN -- uvx mcp-server-motherduck --db-path md: --read-write
 ```
 
 </details>
