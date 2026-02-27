@@ -20,7 +20,7 @@ Connect AI assistants to your data using DuckDB's powerful analytical SQL engine
 |---|---|---|
 | **Hosting** | Hosted by MotherDuck | Runs locally/self-hosted |
 | **Setup** | Zero-setup | Requires local installation |
-| **Access** | Read-only | Read-write supported |
+| **Access** | Read-write supported | Read-write supported |
 | **Local filesystem** | - | Query across local and remote databases, ingest data from / export data to local filesystem |
 
 > 📝 **Migrating from v0.x?**
@@ -150,7 +150,7 @@ All tools return JSON. Results are limited to 1024 rows / 50,000 chars by defaul
 
 When giving third parties access to a self-hosted MCP server, **read-only mode alone is not sufficient** — it still allows access to the local filesystem, changing DuckDB settings, and other potentially sensitive operations.
 
-For production deployments with third-party access, we recommend **[MotherDuck Remote MCP](https://motherduck.com/docs/sql-reference/mcp/)** — zero-setup, read-only, and hosted by MotherDuck.
+For production deployments with third-party access, we recommend **[MotherDuck Remote MCP](https://motherduck.com/docs/sql-reference/mcp/)** — zero-setup, read-write capable, and hosted by MotherDuck.
 
 **Self-hosting MotherDuck MCP:** Fork this repo and customize as needed. Use a **[service account](https://motherduck.com/docs/key-tasks/service-accounts-guide/)** with **[read-scaling tokens](https://motherduck.com/docs/key-tasks/authenticating-and-connecting-to-motherduck/read-scaling/#creating-a-read-scaling-token)** and enable **[SaaS mode](https://motherduck.com/docs/key-tasks/authenticating-and-connecting-to-motherduck/authenticating-to-motherduck/#authentication-using-saas-mode)** to restrict local file access.
 
