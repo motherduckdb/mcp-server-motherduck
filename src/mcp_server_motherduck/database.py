@@ -233,36 +233,25 @@ class DatabaseClient:
 
         # Handle MotherDuck paths
         if db_path.startswith("md:"):
-            if motherduck_token:
-                logger.info("Using MotherDuck token to connect to database `md:`")
-                if saas_mode:
-                    logger.info("Connecting to MotherDuck in SaaS mode")
-                    return (
-                        f"{db_path}?motherduck_token={motherduck_token}&saas_mode=true",
-                        "motherduck",
-                    )
-                else:
-                    return (
-                        f"{db_path}?motherduck_token={motherduck_token}",
-                        "motherduck",
-                    )
-            elif os.getenv("motherduck_token") or os.getenv("MOTHERDUCK_TOKEN"):
-                token = os.getenv("motherduck_token") or os.getenv("MOTHERDUCK_TOKEN")
-                logger.info("Using MotherDuck token from env to connect to database `md:`")
-                if saas_mode:
-                    logger.info("Connecting to MotherDuck in SaaS mode")
-                    return (
-                        f"{db_path}?motherduck_token={token}&saas_mode=true",
-                        "motherduck",
-                    )
-                return (
-                    f"{db_path}?motherduck_token={token}",
-                    "motherduck",
-                )
-            else:
+            token = (
+                motherduck_token or os.getenv("motherduck_token") or os.getenv("MOTHERDUCK_TOKEN")
+            )
+            if not token:
                 raise ValueError(
                     "Please set the `motherduck_token` or `MOTHERDUCK_TOKEN` as an environment variable or pass it as an argument with `--motherduck-token` when using `md:` as db_path."
                 )
+
+            if motherduck_token:
+                logger.info("Using MotherDuck token to connect to database `md:`")
+            else:
+                logger.info("Using MotherDuck token from env to connect to database `md:`")
+
+            conn_str = f"{db_path}?motherduck_token={token}"
+            if saas_mode:
+                logger.info("Connecting to MotherDuck in SaaS mode")
+                conn_str += "&saas_mode=true"
+
+            return conn_str, "motherduck"
 
         if db_path == ":memory:":
             return db_path, "duckdb"
