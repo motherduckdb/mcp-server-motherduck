@@ -42,6 +42,7 @@ def create_mcp_server(
     query_timeout: int = -1,
     init_sql: str | None = None,
     allow_switch_databases: bool = False,
+    motherduck_connection_parameters: str | None = None,
 ) -> FastMCP:
     """
     Create and configure the FastMCP server.
@@ -58,6 +59,7 @@ def create_mcp_server(
         query_timeout: Query timeout in seconds (-1 to disable)
         init_sql: SQL file path or string to execute on startup
         allow_switch_databases: Enable the switch_database_connection tool
+        motherduck_connection_parameters: Additional MotherDuck connection string parameters (e.g. "session_hint=mcp&dbinstance_inactivity_ttl=0s")
 
     Returns:
         Configured FastMCP server instance
@@ -74,6 +76,7 @@ def create_mcp_server(
         max_chars=max_chars,
         query_timeout=query_timeout,
         init_sql=init_sql,
+        motherduck_connection_parameters=motherduck_connection_parameters,
     )
 
     # Get instructions with connection context
