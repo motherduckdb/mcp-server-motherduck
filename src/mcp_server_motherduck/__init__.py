@@ -113,6 +113,16 @@ logging.basicConfig(level=logging.INFO, format="[motherduck] %(levelname)s - %(m
     envvar="MCP_ALLOW_SWITCH_DATABASES",
     help="Enable the switch_database_connection tool to change databases at runtime. Disabled by default.",
 )
+@click.option(
+    "--motherduck-connection-parameters",
+    default="session_hint=mcp&dbinstance_inactivity_ttl=0s",
+    envvar="MCP_MOTHERDUCK_CONNECTION_PARAMETERS",
+    help=(
+        "(Default: session_hint=mcp&dbinstance_inactivity_ttl=0s) "
+        "Additional MotherDuck connection string parameters in key=value format separated by &. "
+        "Example: --motherduck-connection-parameters 'session_hint=my_app&dbinstance_inactivity_ttl=1h'"
+    ),
+)
 # Backwards compatibility aliases (deprecated)
 @click.option(
     "--saas-mode",
@@ -148,6 +158,7 @@ def main(
     query_timeout: int,
     init_sql: str | None,
     allow_switch_databases: bool,
+    motherduck_connection_parameters: str | None,
     # Deprecated args
     saas_mode: bool,
     read_only: bool,
@@ -250,6 +261,7 @@ def main(
         query_timeout=query_timeout,
         init_sql=init_sql,
         allow_switch_databases=allow_switch_databases,
+        motherduck_connection_parameters=motherduck_connection_parameters,
     )
 
     # Run the server with the appropriate transport

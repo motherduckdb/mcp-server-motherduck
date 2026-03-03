@@ -169,6 +169,7 @@ For production deployments with third-party access, we recommend **[MotherDuck R
 | `--max-chars` | `50000` | Max characters returned |
 | `--query-timeout` | `-1` | Query timeout in seconds (-1 = disabled) |
 | `--init-sql` | `None` | SQL to execute on startup |
+| `--motherduck-connection-parameters` | `session_hint=mcp&dbinstance_inactivity_ttl=0s` | Additional MotherDuck connection string parameters (`key=value` pairs separated by `&`) |
 | `--ephemeral-connections` | `True` | Use temporary connections for read-only local files |
 | `--transport` | `stdio` | Transport type: `stdio` or `http` |
 | `--stateless-http` | `False` | For protocol compatibility only (e.g. with [AWS Bedrock AgentCore Runtime](https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/runtime-mcp-protocol-contract.html)). Server still maintains global state via the shared DatabaseClient. |

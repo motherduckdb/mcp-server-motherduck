@@ -24,10 +24,9 @@ def _is_read_scaling_connection(conn: duckdb.DuckDBPyConnection) -> bool:
     """
     try:
         # __md_duckling_id() is a table function, must use FROM clause
-        result = conn.execute("SELECT * FROM __md_duckling_id()").fetchone()
-        if result and result[0]:
-            duckling_id = result[0]
-            # Check if duckling ID ends with .rs.{number}
+        results = conn.execute("SELECT * FROM __md_duckling_id()").fetchall()
+        if results and results[0] and results[0][0]:
+            duckling_id = results[0][0]
             return bool(re.search(r"\.rs\.\d+$", duckling_id))
         return False
     except Exception:
@@ -47,6 +46,7 @@ class DatabaseClient:
         max_chars: int = 50000,
         query_timeout: int = -1,
         init_sql: str | None = None,
+        motherduck_connection_parameters: str | None = None,
     ):
         self._read_only = read_only
         self._ephemeral_connections = ephemeral_connections
@@ -54,6 +54,7 @@ class DatabaseClient:
         self._max_chars = max_chars
         self._query_timeout = query_timeout
         self._init_sql = init_sql
+        self._motherduck_connection_parameters = motherduck_connection_parameters
         self.db_path, self.db_type = self._resolve_db_path_type(
             db_path, motherduck_token, saas_mode
         )
@@ -233,24 +234,29 @@ class DatabaseClient:
 
         # Handle MotherDuck paths
         if db_path.startswith("md:"):
+            md_params = (
+                f"&{self._motherduck_connection_parameters}"
+                if self._motherduck_connection_parameters
+                else ""
+            )
             if motherduck_token:
                 logger.info("Using MotherDuck token to connect to database `md:`")
                 if saas_mode:
                     logger.info("Connecting to MotherDuck in SaaS mode")
                     return (
-                        f"{db_path}?motherduck_token={motherduck_token}&saas_mode=true",
+                        f"{db_path}?motherduck_token={motherduck_token}&saas_mode=true{md_params}",
                         "motherduck",
                     )
                 else:
                     return (
-                        f"{db_path}?motherduck_token={motherduck_token}",
+                        f"{db_path}?motherduck_token={motherduck_token}{md_params}",
                         "motherduck",
                     )
             elif os.getenv("motherduck_token") or os.getenv("MOTHERDUCK_TOKEN"):
                 token = os.getenv("motherduck_token") or os.getenv("MOTHERDUCK_TOKEN")
                 logger.info("Using MotherDuck token from env to connect to database `md:`")
                 return (
-                    f"{db_path}?motherduck_token={token}",
+                    f"{db_path}?motherduck_token={token}{md_params}",
                     "motherduck",
                 )
             else:
