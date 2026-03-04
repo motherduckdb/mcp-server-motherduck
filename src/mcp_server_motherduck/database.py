@@ -64,7 +64,14 @@ class DatabaseClient:
         if home_dir:
             os.environ["HOME"] = home_dir
 
-        self.conn = self._initialize_connection()
+        self.conn = None
+        self._conn_initialized = False
+
+    def _ensure_connected(self) -> None:
+        """Lazily initialize the database connection on first use."""
+        if not self._conn_initialized:
+            self._conn_initialized = True
+            self.conn = self._initialize_connection()
 
     def _initialize_connection(self) -> Optional[duckdb.DuckDBPyConnection]:
         """Initialize connection to the MotherDuck or DuckDB database"""
@@ -271,6 +278,7 @@ class DatabaseClient:
 
     def _execute(self, query: str) -> dict[str, Any]:
         """Execute query and return JSON-serializable result."""
+        self._ensure_connected()
         # Get connection to use
         if self.conn is None:
             conn = duckdb.connect(
@@ -386,6 +394,7 @@ class DatabaseClient:
         Execute a query and return raw results (columns, types, rows).
         Used by catalog tools that need custom result formatting.
         """
+        self._ensure_connected()
         if self.conn is None:
             conn = duckdb.connect(
                 self.db_path,
@@ -439,6 +448,7 @@ class DatabaseClient:
             self.db_type = "duckdb"
 
         # Re-initialize connection (will be None for read-only local DuckDB)
+        self._conn_initialized = True
         self.conn = self._initialize_connection()
 
         logger.info(f"Switched to database: {path} (read_only={read_only})")

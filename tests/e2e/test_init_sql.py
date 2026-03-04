@@ -139,25 +139,31 @@ async def test_init_sql_none_works():
 
 @pytest.mark.asyncio
 async def test_init_sql_error_raises():
-    """Invalid init SQL raises error on startup."""
+    """Invalid init SQL raises error on first tool call."""
     from mcp_server_motherduck.server import create_mcp_server
 
-    with pytest.raises(ValueError, match="Init SQL execution failed"):
-        create_mcp_server(
-            db_path=":memory:",
-            init_sql="THIS IS NOT VALID SQL SYNTAX!!!",
-        )
+    mcp = create_mcp_server(
+        db_path=":memory:",
+        init_sql="THIS IS NOT VALID SQL SYNTAX!!!",
+    )
+    async with Client(mcp) as client:
+        result = await client.call_tool_mcp("execute_query", {"sql": "SELECT 1"})
+        assert result.isError is True
+        text = get_result_text(result)
+        assert "Init SQL execution failed" in text
 
 
 @pytest.mark.asyncio
 async def test_init_sql_nonexistent_file():
-    """Non-existent file path is treated as SQL string (and will fail)."""
+    """Non-existent file path is treated as SQL string (and will fail on first tool call)."""
     from mcp_server_motherduck.server import create_mcp_server
 
-    # A path that doesn't exist will be treated as SQL string
-    # and will fail because it's not valid SQL
-    with pytest.raises(ValueError, match="Init SQL execution failed"):
-        create_mcp_server(
-            db_path=":memory:",
-            init_sql="/nonexistent/path/to/file.sql",
-        )
+    mcp = create_mcp_server(
+        db_path=":memory:",
+        init_sql="/nonexistent/path/to/file.sql",
+    )
+    async with Client(mcp) as client:
+        result = await client.call_tool_mcp("execute_query", {"sql": "SELECT 1"})
+        assert result.isError is True
+        text = get_result_text(result)
+        assert "Init SQL execution failed" in text

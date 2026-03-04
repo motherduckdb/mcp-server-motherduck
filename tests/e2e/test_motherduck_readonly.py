@@ -17,10 +17,11 @@ from tests.e2e.conftest import get_mcp_client, get_result_text
 @pytest.mark.asyncio
 async def test_motherduck_readonly_rejects_readwrite_token(motherduck_token: str):
     """
-    Default read-only mode with a read/write token should be rejected.
+    Default read-only mode with a read/write token should be rejected on first tool call.
 
     For security, MotherDuck connections in read-only mode require a read-scaling
     token. Using a read/write token in read-only mode indicates misconfiguration.
+    Connection is established lazily, so the error surfaces on the first query.
     """
     # motherduck_token fixture provides the read/write token
     client = get_mcp_client(
@@ -31,11 +32,12 @@ async def test_motherduck_readonly_rejects_readwrite_token(motherduck_token: str
         # No --read-write flag, so server runs in default read-only mode
     )
 
-    # The server should fail to start - read/write token not allowed in read-only mode
-    with pytest.raises(Exception):
-        async with client:
-            # Should not get here - server should fail to initialize
-            await client.list_tools()
+    async with client:
+        # Server starts fine (connection is deferred), but first tool call should fail
+        result = await client.call_tool_mcp("execute_query", {"sql": "SELECT 1"})
+        assert result.isError is True
+        text = get_result_text(result)
+        assert "read-scaling token" in text
 
 
 @pytest.mark.asyncio
