@@ -87,13 +87,13 @@
       "type": "boolean",
       "title": "Enable Write Access",
       "description": "Allow the server to modify data.",
-      "default": true
+      "default": false
     },
     "allow_switch_databases": {
       "type": "boolean",
       "title": "Allow Database Switching",
       "description": "Enable the switch_database_connection tool to change databases at runtime.",
-      "default": true
+      "default": false
     },
     "motherduck_saas_mode": {
       "type": "boolean",
