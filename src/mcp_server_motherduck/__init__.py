@@ -117,11 +117,7 @@ logging.basicConfig(level=logging.INFO, format="[motherduck] %(levelname)s - %(m
     "--motherduck-connection-parameters",
     default="session_hint=mcp&dbinstance_inactivity_ttl=0s",
     envvar="MCP_MOTHERDUCK_CONNECTION_PARAMETERS",
-    help=(
-        "(Default: session_hint=mcp&dbinstance_inactivity_ttl=0s) "
-        "Additional MotherDuck connection string parameters in key=value format separated by &. "
-        "Example: --motherduck-connection-parameters 'session_hint=my_app&dbinstance_inactivity_ttl=1h'"
-    ),
+    help="Additional MotherDuck connection string parameters in key=value format separated by &.",
 )
 # Backwards compatibility aliases (deprecated)
 @click.option(
