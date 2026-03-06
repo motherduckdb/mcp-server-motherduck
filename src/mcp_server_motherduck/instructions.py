@@ -22,8 +22,35 @@ INSTRUCTIONS_BASE = """Execute SQL queries against DuckDB and MotherDuck databas
 - Use fully qualified names when joining tables across different databases
 
 **Identifiers and Literals:**
-- Use double quotes (`"`) for identifiers with spaces/special characters or case-sensitivity
-- Use single quotes (`'`) for string literals
+- Use double quotes (`"`) for identifiers; use single quotes (`'`) for string literals
+- **ALWAYS quote identifiers** that contain hyphens, colons, spaces, special characters, or reserved words in raw query execution. The other MCP tools have already been hardened, just pass the proper column, table or database name.
+- When in doubt, quoting an identifier once is always safe — it never hurts to quote an unquoted identifier.
+
+**Identifier Quoting — When It Is Required:**
+
+| Identifier type | Example | Quoted form |
+|---|---|---|
+| Contains hyphen | `ACSDT5Y2023_B19080-Data` | `"ACSDT5Y2023_B19080-Data"` |
+| Contains colon | `Unnamed: 12` | `"Unnamed: 12"` |
+| Contains space | `My Table` | `"My Table"` |
+| Reserved word | `order`, `select` | `"order"`, `"select"` |
+| Special characters | `column@name`, `field#1` | `"column@name"`, `"field#1"` |
+
+```sql
+-- Table with hyphens — MUST be quoted
+SELECT * FROM "ACSDT5Y2023_B19080-Data";
+
+-- Column with colon — MUST be quoted
+SELECT "GEO_ID", "NAME", "Unnamed: 12" FROM "ACSDT5Y2023_B19080-Data";
+
+-- Fully qualified with all parts quoted
+SELECT * FROM "Census_ACS_Income_Distribution_Detail".main."ACSDT5Y2023_B19080-Data";
+```
+
+**Binding Error Troubleshooting:**
+- `Binder Error: Table X does not exist` → the table name needs quoting; use `list_tables` to get the exact name
+- `Parser Error: syntax error at or near "-"` → hyphen in identifier; wrap in double quotes
+- Unquoted colons (`:`) are treated as slice operators, returning wrong results
 
 **Flexible Query Structure:**
 - Queries can start with `FROM`: `FROM my_table WHERE condition;`

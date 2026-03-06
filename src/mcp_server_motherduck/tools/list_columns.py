@@ -4,6 +4,8 @@ List columns tool - List all columns of a table or view.
 
 from typing import Any
 
+from psycopg2.extensions import adapt
+
 DESCRIPTION = (
     "List all columns of a table or view with their types and comments. "
     "If database/schema are not specified, uses the current database/schema."
@@ -39,6 +41,11 @@ def list_columns(
             _, _, schema_rows = db_client.execute_raw("SELECT current_schema()")
             schema = schema_rows[0][0]
 
+        # Quote identifiers as SQL string literals
+        db_q = adapt(database).getquoted().decode()
+        schema_q = adapt(schema).getquoted().decode()
+        table_q = adapt(table).getquoted().decode()
+
         # Query columns using DuckDB system function
         sql = f"""
             SELECT
@@ -47,9 +54,9 @@ def list_columns(
                 is_nullable = 'YES' as nullable,
                 comment
             FROM duckdb_columns()
-            WHERE database_name = '{database}'
-              AND schema_name = '{schema}'
-              AND table_name = '{table}'
+            WHERE database_name = {db_q}
+              AND schema_name = {schema_q}
+              AND table_name = {table_q}
             ORDER BY column_index
         """
 
@@ -71,9 +78,9 @@ def list_columns(
         try:
             _, _, view_rows = db_client.execute_raw(f"""
                 SELECT 1 FROM duckdb_views()
-                WHERE database_name = '{database}'
-                  AND schema_name = '{schema}'
-                  AND view_name = '{table}'
+                WHERE database_name = {db_q}
+                  AND schema_name = {schema_q}
+                  AND view_name = {table_q}
                 LIMIT 1
             """)
             if view_rows:
