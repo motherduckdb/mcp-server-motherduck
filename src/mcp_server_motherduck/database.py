@@ -137,7 +137,7 @@ class DatabaseClient:
                         TYPE S3,
                         KEY_ID '{aws_access_key}',
                         SECRET '{aws_secret_key}',
-                        REGION '{aws_region}'
+                        REGION '{aws_region}',
                         ENDPOINT '{aws_endpoint}'
                     );
                 """)
@@ -148,7 +148,7 @@ class DatabaseClient:
                     CREATE SECRET IF NOT EXISTS s3_secret (
                         TYPE S3,
                         PROVIDER credential_chain,
-                        REGION '{aws_region}'
+                        REGION '{aws_region}',
                         ENDPOINT '{aws_endpoint}'
                     );
                 """)
