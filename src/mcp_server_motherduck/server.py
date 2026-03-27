@@ -240,6 +240,7 @@ def create_mcp_server(
             )
             return json.dumps(result, indent=2, default=str)
 
-    logger.info(f"FastMCP server created with {len(mcp._tool_manager._tools)} tools")
+    tool_count = 5 if allow_switch_databases else 4
+    logger.info(f"FastMCP server created with {tool_count} tools")
 
     return mcp
