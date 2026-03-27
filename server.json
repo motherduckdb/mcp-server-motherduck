@@ -162,6 +162,11 @@
           "name": "AWS_DEFAULT_REGION",
           "description": "AWS region for S3 database connections",
           "isRequired": false
+        },
+        {
+          "name": "AWS_DEFAULT_ENDPOINT",
+          "description": "AWS endpoint for S3 database connections",
+          "isRequired": false
         }
       ]
     }
