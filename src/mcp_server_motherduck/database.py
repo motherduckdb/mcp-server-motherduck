@@ -130,7 +130,7 @@ class DatabaseClient:
             aws_region = os.environ.get("AWS_DEFAULT_REGION", "us-east-1")
             aws_endpoint = os.environ.get("AWS_ENDPOINT")
 
-            if aws_access_key and aws_secret_key and not aws_session_token:
+            if aws_access_key and aws_secret_key and not aws_session_token and not aws_endpoint:
                 # Use CREATE SECRET for better credential management
                 conn.execute(f"""
                     CREATE SECRET IF NOT EXISTS s3_secret (
@@ -158,7 +158,7 @@ class DatabaseClient:
                     CREATE SECRET IF NOT EXISTS s3_secret (
                         TYPE S3,
                         PROVIDER credential_chain,
-                        REGION '{aws_region}',
+                        REGION '{aws_region}'
                     );
                 """)
 
