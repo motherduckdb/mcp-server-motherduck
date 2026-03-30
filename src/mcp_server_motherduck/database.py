@@ -247,6 +247,10 @@ class DatabaseClient:
         self, db_path: str, motherduck_token: str | None = None, saas_mode: bool = False
     ) -> tuple[str, Literal["duckdb", "motherduck", "s3"]]:
         """Resolve and validate the database path"""
+        # Normalize motherduck: prefix to md:
+        if db_path.startswith("motherduck:"):
+            db_path = "md:" + db_path[len("motherduck:") :]
+
         # Handle S3 paths
         if db_path.startswith("s3://"):
             return db_path, "s3"
