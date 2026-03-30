@@ -70,8 +70,8 @@ class DatabaseClient:
     def _ensure_connected(self) -> None:
         """Lazily initialize the database connection on first use."""
         if not self._conn_initialized:
-            self._conn_initialized = True
             self.conn = self._initialize_connection()
+            self._conn_initialized = True
 
     def _initialize_connection(self) -> Optional[duckdb.DuckDBPyConnection]:
         """Initialize connection to the MotherDuck or DuckDB database"""
