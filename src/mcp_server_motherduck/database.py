@@ -274,8 +274,11 @@ class DatabaseClient:
             elif os.getenv("motherduck_token") or os.getenv("MOTHERDUCK_TOKEN"):
                 token = os.getenv("motherduck_token") or os.getenv("MOTHERDUCK_TOKEN")
                 logger.info("Using MotherDuck token from env to connect to database `md:`")
+                saas_param = "&saas_mode=true" if saas_mode else ""
+                if saas_mode:
+                    logger.info("Connecting to MotherDuck in SaaS mode")
                 return (
-                    f"{db_path}?motherduck_token={token}{md_params}",
+                    f"{db_path}?motherduck_token={token}{saas_param}{md_params}",
                     "motherduck",
                 )
             else:
