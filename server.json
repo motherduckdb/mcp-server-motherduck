@@ -164,7 +164,7 @@
           "isRequired": false
         },
         {
-          "name": "AWS_DEFAULT_ENDPOINT",
+          "name": "AWS_ENDPOINT",
           "description": "AWS endpoint for S3 database connections",
           "isRequired": false
         }

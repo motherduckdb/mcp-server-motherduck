@@ -186,7 +186,7 @@ For production deployments with third-party access, we recommend **[MotherDuck R
 | `AWS_SECRET_ACCESS_KEY` | AWS secret key for S3 database connections |
 | `AWS_SESSION_TOKEN` | AWS session token for temporary credentials (IAM roles, SSO, EC2 instance profiles) |
 | `AWS_DEFAULT_REGION` | AWS region for S3 connections |
-| `AWS_DEFAULT_ENDPOINT` | AWS endpoint for S3 connections |
+| `AWS_ENDPOINT` | AWS endpoint for S3 connections |
 
 ## Troubleshooting
 
