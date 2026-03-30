@@ -4,6 +4,8 @@ List tables tool - List all tables and views in a database.
 
 from typing import Any
 
+from ..database import quote_sql_string
+
 DESCRIPTION = (
     "List all tables and views in a database with their comments. "
     "If database is not specified, uses the current database."
@@ -33,9 +35,10 @@ def list_tables(
             database = db_rows[0][0]
 
         # Build schema filter
-        schema_filter = f"AND schema_name = '{schema}'" if schema else ""
+        schema_filter = f"AND schema_name = {quote_sql_string(schema)}" if schema else ""
 
         # Query tables and views using DuckDB system functions
+        db_quoted = quote_sql_string(database)
         sql = f"""
             SELECT
                 schema_name as schema,
@@ -43,7 +46,7 @@ def list_tables(
                 'table' as type,
                 comment
             FROM duckdb_tables()
-            WHERE database_name = '{database}' {schema_filter}
+            WHERE database_name = {db_quoted} {schema_filter}
 
             UNION ALL
 
@@ -53,7 +56,7 @@ def list_tables(
                 'view' as type,
                 comment
             FROM duckdb_views()
-            WHERE database_name = '{database}' {schema_filter}
+            WHERE database_name = {db_quoted} {schema_filter}
 
             ORDER BY schema, type, name
         """

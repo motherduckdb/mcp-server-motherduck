@@ -12,6 +12,16 @@ from .configs import SERVER_VERSION
 logger = logging.getLogger("mcp_server_motherduck")
 
 
+def quote_sql_string(value: str) -> str:
+    """Return a single-quoted SQL string literal with internal quotes escaped."""
+    return "'" + value.replace("'", "''") + "'"
+
+
+def quote_sql_identifier(value: str) -> str:
+    """Quote a SQL identifier with double quotes, escaping internal double quotes."""
+    return '"' + value.replace('"', '""') + '"'
+
+
 def _is_read_scaling_connection(conn: duckdb.DuckDBPyConnection) -> bool:
     """
     Check if a MotherDuck connection is using read-scaling.

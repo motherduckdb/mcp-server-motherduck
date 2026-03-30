@@ -4,6 +4,8 @@ List columns tool - List all columns of a table or view.
 
 from typing import Any
 
+from ..database import quote_sql_string
+
 DESCRIPTION = (
     "List all columns of a table or view with their types and comments. "
     "If database/schema are not specified, uses the current database/schema."
@@ -47,9 +49,9 @@ def list_columns(
                 is_nullable = 'YES' as nullable,
                 comment
             FROM duckdb_columns()
-            WHERE database_name = '{database}'
-              AND schema_name = '{schema}'
-              AND table_name = '{table}'
+            WHERE database_name = {quote_sql_string(database)}
+              AND schema_name = {quote_sql_string(schema)}
+              AND table_name = {quote_sql_string(table)}
             ORDER BY column_index
         """
 
@@ -71,9 +73,9 @@ def list_columns(
         try:
             _, _, view_rows = db_client.execute_raw(f"""
                 SELECT 1 FROM duckdb_views()
-                WHERE database_name = '{database}'
-                  AND schema_name = '{schema}'
-                  AND view_name = '{table}'
+                WHERE database_name = {quote_sql_string(database)}
+                  AND schema_name = {quote_sql_string(schema)}
+                  AND view_name = {quote_sql_string(table)}
                 LIMIT 1
             """)
             if view_rows:

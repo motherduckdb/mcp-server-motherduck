@@ -23,15 +23,13 @@ def list_databases(db_client: Any) -> dict[str, Any]:
         JSON-serializable dict with database list or error
     """
     try:
-        # Try MotherDuck function first (works for MotherDuck connections)
-        try:
+        if db_client.db_type == "motherduck":
             _, _, rows = db_client.execute_raw(
                 "SELECT alias, type FROM MD_ALL_DATABASES() "
                 "WHERE alias IS NOT NULL AND alias NOT IN ('system', 'temp')"
             )
             databases = [{"name": row[0], "type": row[1]} for row in rows]
-        except Exception:
-            # Fall back to DuckDB system function (works for local DuckDB)
+        else:
             _, _, rows = db_client.execute_raw(
                 "SELECT database_name, type FROM duckdb_databases() "
                 "WHERE database_name NOT IN ('system', 'temp')"
