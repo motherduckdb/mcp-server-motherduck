@@ -54,6 +54,8 @@ class DatabaseClient:
         self._max_chars = max_chars
         self._query_timeout = query_timeout
         self._init_sql = init_sql
+        self._motherduck_token = motherduck_token
+        self._saas_mode = saas_mode
         self._motherduck_connection_parameters = motherduck_connection_parameters
         self.db_path, self.db_type = self._resolve_db_path_type(
             db_path, motherduck_token, saas_mode
@@ -453,21 +455,13 @@ class DatabaseClient:
             self.conn = None
 
         # Update database configuration
-        self.db_path = path
         self._read_only = read_only
-
-        # Determine new database type
-        if path.startswith("md:") or path.startswith("motherduck:"):
-            self.db_type = "motherduck"
-        elif path.startswith("s3://"):
-            self.db_type = "s3"
-        elif path == ":memory:":
-            self.db_type = "memory"
-        else:
-            self.db_type = "duckdb"
+        self.db_path, self.db_type = self._resolve_db_path_type(
+            path, self._motherduck_token, self._saas_mode
+        )
 
         # Re-initialize connection (will be None for read-only local DuckDB)
-        self._conn_initialized = True
         self.conn = self._initialize_connection()
+        self._conn_initialized = True
 
         logger.info(f"Switched to database: {path} (read_only={read_only})")
