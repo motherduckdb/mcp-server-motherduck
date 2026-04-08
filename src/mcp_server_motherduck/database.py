@@ -22,6 +22,17 @@ def quote_sql_identifier(value: str) -> str:
     return '"' + value.replace('"', '""') + '"'
 
 
+def identifier_needs_quoting(name: str, reserved_keywords: set[str]) -> bool:
+    """Check if a SQL identifier needs double-quoting to be used safely."""
+    if not name:
+        return True
+    if not re.match(r'^[a-zA-Z_][a-zA-Z0-9_]*$', name):
+        return True
+    if name.upper() in reserved_keywords:
+        return True
+    return False
+
+
 def _is_read_scaling_connection(conn: duckdb.DuckDBPyConnection) -> bool:
     """
     Check if a MotherDuck connection is using read-scaling.
@@ -78,6 +89,7 @@ class DatabaseClient:
 
         self.conn = None
         self._conn_initialized = False
+        self._cached_keywords: set[str] | None = None
 
     def _ensure_connected(self) -> None:
         """Lazily initialize the database connection on first use."""
@@ -445,6 +457,25 @@ class DatabaseClient:
             if self.conn is None:
                 conn.close()
 
+    def get_reserved_keywords(self) -> set[str]:
+        """Return the set of DuckDB reserved keywords, cached after first fetch."""
+        if self._cached_keywords is None:
+            try:
+                _, _, rows = self.execute_raw(
+                    "SELECT keyword_name FROM duckdb_keywords() WHERE keyword_category = 'reserved'"
+                )
+                self._cached_keywords = {row[0].upper() for row in rows}
+            except Exception:
+                logger.warning("Could not fetch duckdb_keywords(); reserved word detection disabled")
+                self._cached_keywords = set()
+        return self._cached_keywords
+
+    def quote_identifier_for_display(self, name: str) -> str:
+        """Return the identifier quoted if needed, or as-is if safe to use unquoted."""
+        if identifier_needs_quoting(name, self.get_reserved_keywords()):
+            return quote_sql_identifier(name)
+        return name
+
     def switch_database(self, path: str, read_only: bool = True) -> None:
         """
         Switch to a different primary database.
@@ -463,6 +494,7 @@ class DatabaseClient:
             except Exception:
                 pass  # Ignore close errors
             self.conn = None
+        self._cached_keywords = None
 
         # Update database configuration
         self._read_only = read_only
