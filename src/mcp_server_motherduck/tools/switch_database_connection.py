@@ -106,7 +106,9 @@ def switch_database_connection(
         warning = None
 
     try:
-        previous_db = db_client.db_path
+        # Use user_db_path (raw user input) rather than db_path, which for
+        # MotherDuck connections contains the motherduck_token query parameter.
+        previous_db = db_client.user_db_path
         db_client.switch_database(path, effective_read_only)
 
         result: dict[str, Any] = {
