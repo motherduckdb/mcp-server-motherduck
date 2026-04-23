@@ -90,6 +90,7 @@ See [Command Line Parameters](#command-line-parameters) for more options, [Secur
 | **Gemini CLI** | Use CLI commands below or `~/.gemini/settings.json` | - |
 | **Cursor** | Settings → MCP → Add new global MCP server | [<img src="https://cursor.com/deeplink/mcp-install-dark.svg" alt="Install in Cursor" height="20">](https://cursor.com/en/install-mcp?name=DuckDB&config=eyJjb21tYW5kIjoidXZ4IG1jcC1zZXJ2ZXItbW90aGVyZHVjayAtLWRiLXBhdGggOm1lbW9yeTogLS1yZWFkLXdyaXRlIC0tYWxsb3ctc3dpdGNoLWRhdGFiYXNlcyIsImVudiI6e319) |
 | **VS Code** | `Ctrl+Shift+P` → "Preferences: Open User Settings (JSON)" | [![Install with UV in VS Code](https://img.shields.io/badge/VS_Code-Install-0098FF?style=flat-square)](https://insiders.vscode.dev/redirect/mcp/install?name=mcp-server-motherduck&config=%7B%22command%22%3A%22uvx%22%2C%22args%22%3A%5B%22mcp-server-motherduck%22%2C%22--db-path%22%2C%22%3Amemory%3A%22%2C%22--read-write%22%2C%22--allow-switch-databases%22%5D%7D) |
+| **Kiro** | `~/.kiro/settings/mcp.json` (global) or `.kiro/settings/mcp.json` (project) | [![Add to Kiro](https://kiro.dev/images/add-to-kiro.svg)](https://kiro.dev/launch/mcp/add?name=DuckDB&config=%7B%22command%22%3A%22uvx%22%2C%22args%22%3A%5B%22mcp-server-motherduck%22%2C%22--db-path%22%2C%22%3Amemory%3A%22%2C%22--read-write%22%2C%22--allow-switch-databases%22%5D%7D) |
 
 Any MCP-compatible client can use this server. Add the JSON configuration from [Quick Start](#quick-start) to your client's MCP config file. Consult your client's documentation for the config file location.
 
@@ -149,6 +150,40 @@ gemini mcp add -s user duckdb uvx mcp-server-motherduck --db-path /absolute/path
 **MotherDuck (Read-Write):**
 ```bash
 gemini mcp add -s user -e motherduck_token=YOUR_TOKEN motherduck uvx mcp-server-motherduck --db-path md: --read-write
+```
+
+</details>
+
+<details>
+<summary><b>Kiro manual JSON config</b></summary>
+
+Add the following to your Kiro MCP config file (`~/.kiro/settings/mcp.json` for global, or `.kiro/settings/mcp.json` for project-scoped). See the [Kiro MCP documentation](https://kiro.dev/docs/mcp/) for more details.
+
+**In-Memory DuckDB (Dev Mode):**
+```json
+{
+  "mcpServers": {
+    "DuckDB (in-memory, r/w)": {
+      "command": "uvx",
+      "args": ["mcp-server-motherduck", "--db-path", ":memory:", "--read-write", "--allow-switch-databases"]
+    }
+  }
+}
+```
+
+**MotherDuck (Read-Write):**
+```json
+{
+  "mcpServers": {
+    "MotherDuck (local, r/w)": {
+      "command": "uvx",
+      "args": ["mcp-server-motherduck", "--db-path", "md:", "--read-write"],
+      "env": {
+        "motherduck_token": "<YOUR_MOTHERDUCK_TOKEN>"
+      }
+    }
+  }
+}
 ```
 
 </details>
