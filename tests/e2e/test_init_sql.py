@@ -127,6 +127,33 @@ async def test_init_sql_with_multiple_statements():
 
 
 @pytest.mark.asyncio
+async def test_init_sql_file_with_multiple_function_macros(tmp_path):
+    """Init SQL file can define multiple function macros (regression test for #79)."""
+    from mcp_server_motherduck.server import create_mcp_server
+
+    sql_file = tmp_path / "macros.sql"
+    sql_file.write_text(
+        "CREATE OR REPLACE FUNCTION func_a() AS (1);\n"
+        "CREATE OR REPLACE FUNCTION func_b() AS (2);\n"
+    )
+
+    mcp = create_mcp_server(db_path=":memory:", init_sql=str(sql_file))
+    async with Client(mcp) as client:
+        result = await client.call_tool_mcp(
+            "execute_query",
+            {
+                "sql": "SELECT function_name FROM duckdb_functions() "
+                "WHERE function_name IN ('func_a', 'func_b') ORDER BY function_name"
+            },
+        )
+        data = parse_json_result(result)
+        assert data["success"] is True
+        assert data["rowCount"] == 2
+        assert data["rows"][0][0] == "func_a"
+        assert data["rows"][1][0] == "func_b"
+
+
+@pytest.mark.asyncio
 async def test_init_sql_none_works():
     """Server works fine without init SQL."""
     from mcp_server_motherduck.server import create_mcp_server
