@@ -269,3 +269,41 @@ class TestSwitchDatabaseConnectionToolAvailability:
         tools = await memory_client_with_switch.list_tools()
         tool_names = [t.name for t in tools]
         assert "switch_database_connection" in tool_names
+
+
+class TestSwitchDatabaseConnectionTokenRedaction:
+    """The response must not leak the MotherDuck token in `previousDatabase`."""
+
+    @pytest.mark.asyncio
+    async def test_motherduck_token_not_in_switch_response(self, tmp_path):
+        """Switching away from a MotherDuck connection must not expose the token."""
+        from fastmcp import Client
+
+        from mcp_server_motherduck.server import create_mcp_server
+
+        # Create a local target so the switch itself does not touch the network.
+        target_db = tmp_path / "target.duckdb"
+        duckdb.connect(str(target_db)).close()
+
+        sentinel_token = "sentinel-token-should-not-appear-in-responses"
+        mcp = create_mcp_server(
+            db_path="md:fake_db",
+            motherduck_token=sentinel_token,
+            allow_switch_databases=True,
+        )
+
+        async with Client(mcp) as client:
+            result = await client.call_tool_mcp(
+                "switch_database_connection",
+                {"path": str(target_db)},
+            )
+
+        text = get_result_text(result)
+        assert sentinel_token not in text, (
+            f"MotherDuck token leaked in switch_database_connection response: {text}"
+        )
+
+        data = parse_json_result(result)
+        assert "motherduck_token=" not in data.get("previousDatabase", ""), (
+            "previousDatabase must not contain the motherduck_token query parameter"
+        )

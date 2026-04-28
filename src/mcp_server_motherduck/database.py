@@ -67,6 +67,10 @@ class DatabaseClient:
         self._motherduck_token = motherduck_token
         self._saas_mode = saas_mode
         self._motherduck_connection_parameters = motherduck_connection_parameters
+        # Preserve the raw user-supplied path for safe surfacing to clients.
+        # self.db_path may include the motherduck_token for MD connections, so it
+        # must never be returned in tool responses or logged.
+        self.user_db_path = db_path
         self.db_path, self.db_type = self._resolve_db_path_type(
             db_path, motherduck_token, saas_mode
         )
@@ -466,6 +470,7 @@ class DatabaseClient:
 
         # Update database configuration
         self._read_only = read_only
+        self.user_db_path = path
         self.db_path, self.db_type = self._resolve_db_path_type(
             path, self._motherduck_token, self._saas_mode
         )
