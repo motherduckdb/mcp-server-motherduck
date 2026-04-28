@@ -251,8 +251,8 @@ class DatabaseClient:
                 logger.info("Executing init SQL string")
                 sql_content = self._init_sql
 
-            # Execute the SQL
-            conn.execute(sql_content)
+            # Execute the SQL (using executescript to support multiple statements)
+            conn.executescript(sql_content)
             logger.info("Init SQL executed successfully")
 
         except Exception as e:
