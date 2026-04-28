@@ -18,18 +18,18 @@ jobs:
     
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
       
       - name: Setup Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: '3.11'
       
       - name: Install uv
-        uses: astral-sh/setup-uv@v5
+        uses: astral-sh/setup-uv@v8
         with:
           enable-cache: true
       
@@ -92,12 +92,12 @@ jobs:
       mcpb_file: ${{ steps.build.outputs.mcpb_file }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           ref: v${{ needs.bump-version.outputs.new_version }}
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: '20'
 
@@ -113,7 +113,7 @@ jobs:
           echo "Built MCPB bundle: $MCPB_FILE"
 
       - name: Upload MCPB artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: mcpb-bundle
           path: "*.mcpb"
@@ -125,7 +125,7 @@ jobs:
       contents: write
     steps:
       - name: Download MCPB artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v6
         with:
           name: mcpb-bundle
 
