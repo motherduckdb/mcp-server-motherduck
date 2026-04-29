@@ -1,6 +1,6 @@
 from typing import Any
 
-SERVER_VERSION = "1.0.4"
+SERVER_VERSION = "1.0.5"
 
 SERVER_LOCALHOST = "127.0.0.1"
 
