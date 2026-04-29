@@ -240,6 +240,6 @@ def create_mcp_server(
             )
             return json.dumps(result, indent=2, default=str)
 
-    logger.info(f"FastMCP server created with {len(mcp._tool_manager._tools)} tools")
+    logger.info("FastMCP server created")
 
     return mcp
