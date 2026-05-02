@@ -63,11 +63,11 @@ def list_tables(
 
         _, _, rows = db_client.execute_raw(sql)
 
-        # Transform results
+        # Transform results — names are pre-quoted when they need it
         tables = [
             {
                 "schema": row[0],
-                "name": row[1],
+                "name": db_client.quote_identifier_for_display(row[1]),
                 "type": row[2],
                 "comment": row[3] if row[3] else None,
             }

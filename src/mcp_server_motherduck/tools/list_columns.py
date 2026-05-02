@@ -57,10 +57,10 @@ def list_columns(
 
         _, _, rows = db_client.execute_raw(sql)
 
-        # Transform results
+        # Transform results — names are pre-quoted when they need it
         columns = [
             {
-                "name": row[0],
+                "name": db_client.quote_identifier_for_display(row[0]),
                 "type": row[1],
                 "nullable": bool(row[2]),
                 "comment": row[3] if row[3] else None,

@@ -256,6 +256,75 @@ async def test_tool_annotations_read_only_mode(readonly_client):
 
 
 @pytest.mark.asyncio
+async def test_list_tables_quotes_special_names(memory_client):
+    """list_tables returns pre-quoted names for tables with special characters."""
+    # Create tables with various naming patterns
+    await memory_client.call_tool_mcp(
+        "execute_query", {"sql": 'CREATE TABLE "hyphen-table" (id INTEGER)'}
+    )
+    await memory_client.call_tool_mcp(
+        "execute_query", {"sql": "CREATE TABLE safe_table (id INTEGER)"}
+    )
+
+    result = await memory_client.call_tool_mcp("list_tables", {"database": "memory"})
+    data = parse_json_result(result)
+    assert data["success"] is True
+
+    names = {t["name"] for t in data["tables"]}
+    # Hyphen table should be quoted
+    assert '"hyphen-table"' in names
+    # Safe table should not be quoted
+    assert "safe_table" in names
+
+
+@pytest.mark.asyncio
+async def test_list_columns_quotes_special_names(memory_client):
+    """list_columns returns pre-quoted names for columns with special characters."""
+    await memory_client.call_tool_mcp(
+        "execute_query",
+        {"sql": 'CREATE TABLE quote_col_test ("normal_col" INTEGER, "Unnamed: 12" VARCHAR)'},
+    )
+
+    result = await memory_client.call_tool_mcp(
+        "list_columns",
+        {"database": "memory", "table": "quote_col_test"},
+    )
+    data = parse_json_result(result)
+    assert data["success"] is True
+
+    col_names = [c["name"] for c in data["columns"]]
+    assert "normal_col" in col_names
+    assert '"Unnamed: 12"' in col_names
+
+
+@pytest.mark.asyncio
+async def test_quoted_names_work_in_queries(memory_client):
+    """Names returned by list_tables can be used directly in SQL queries."""
+    await memory_client.call_tool_mcp(
+        "execute_query",
+        {"sql": 'CREATE TABLE "special-table" (id INTEGER, val VARCHAR)'},
+    )
+    await memory_client.call_tool_mcp(
+        "execute_query",
+        {"sql": "INSERT INTO \"special-table\" VALUES (1, 'hello')"},
+    )
+
+    # Get the quoted name from list_tables
+    result = await memory_client.call_tool_mcp("list_tables", {"database": "memory"})
+    data = parse_json_result(result)
+    special = next(t for t in data["tables"] if "special" in t["name"])
+    quoted_name = special["name"]
+
+    # Use it directly in a query
+    query_result = await memory_client.call_tool_mcp(
+        "execute_query", {"sql": f"SELECT * FROM {quoted_name}"}
+    )
+    query_data = parse_json_result(query_result)
+    assert query_data["success"] is True
+    assert query_data["rowCount"] == 1
+
+
+@pytest.mark.asyncio
 async def test_catalog_tools_always_readonly(memory_client):
     """Catalog tools always have readOnlyHint=True."""
     tools = await memory_client.list_tools()
