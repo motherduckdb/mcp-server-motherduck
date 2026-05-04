@@ -320,6 +320,7 @@ class DatabaseClient:
                 config={"custom_user_agent": f"mcp-server-motherduck/{SERVER_VERSION}"},
                 read_only=self._read_only,
             )
+            self._execute_init_sql(conn)
         else:
             conn = self.conn
 
@@ -435,6 +436,7 @@ class DatabaseClient:
                 config={"custom_user_agent": f"mcp-server-motherduck/{SERVER_VERSION}"},
                 read_only=self._read_only,
             )
+            self._execute_init_sql(conn)
         else:
             conn = self.conn
 
