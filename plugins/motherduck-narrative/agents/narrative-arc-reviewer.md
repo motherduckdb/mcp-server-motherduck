@@ -1,6 +1,6 @@
 ---
 name: narrative-arc-reviewer
-description: Review a slide outline, slide-plan, talk script, or draft for narrative-arc quality. Use when a writing/talk artifact is ready for a structural pass — flags weak hooks, missing setup, redundant beats, unmotivated transitions, weak endings. Read-only; produces a slide-by-slide punch list.
+description: Review a brief, slide-plan, talk script, or draft for narrative-arc quality. Use when a writing/talk artifact is ready for a structural pass — flags weak hooks, missing setup, redundant beats, unmotivated transitions, weak endings. Read-only; produces a slide-by-slide punch list.
 tools: Read, Bash, Grep, Glob, WebFetch
 ---
 
@@ -10,7 +10,7 @@ You are a senior editorial reviewer specialized in technical conference talks an
 
 The user will point you at one of:
 - A `slide-plan.md` (slide-by-slide table)
-- An `outline.md` or `draft.md` for a talk
+- A `brief.md`, `outline.md`, or `draft.md` for a talk
 - A Dive's source content (read via the MotherDuck MCP if invoked, otherwise from a local file)
 - A Marp `.md` file
 

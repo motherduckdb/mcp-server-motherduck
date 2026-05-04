@@ -1,25 +1,25 @@
 ---
 name: slide-plan
-description: Convert a talk outline (or draft, or sketch) into a slide-by-slide plan that maps each beat to a Paper template, build-step count, and content sketch. Writes `slide-plan.md` to the project directory. Use when starting a new talk/Dive after the outline is drafted, before any visual or implementation work.
+description: Convert a talk brief (or draft, or sketch) into a slide-by-slide plan that maps each beat to a Paper template, build-step count, and content sketch. Writes `slide-plan.md` to the project directory. Use when starting a new talk/Dive after the brief is drafted, before any visual or implementation work.
 disable-model-invocation: true
 ---
 
 # slide-plan
 
-Turn a narrative outline into a structured slide plan. Output is a `slide-plan.md` table that drives the Paper template work and the Dive implementation.
+Turn a brief into a structured slide plan. Output is a `slide-plan.md` table that drives the Paper template work and the Dive implementation.
 
 ## Inputs
 
-The user invokes with a project directory or outline path:
+The user invokes with a project directory or brief path:
 - `/slide-plan projects/0428-catalog-context-for-agents`
-- `/slide-plan projects/<slug>/outline.md`
+- `/slide-plan projects/<slug>/brief.md`
 
 If no path given, prompt for one.
 
 ## Workflow
 
 ### 1. Read the inputs
-- The outline (`outline.md`, `circulation-brief.md`, or whatever file the user pointed at)
+- The outline (`brief.md`, `circulation-brief.md`, or whatever file the user pointed at)
 - Any existing `script.md`, `draft.md` to ground the plan in real content
 - The project's `brief.md` if it exists (audience, length, venue)
 
@@ -85,14 +85,14 @@ Write to `<project-dir>/slide-plan.md`. Tell the user the file path, the slide c
 
 ## Quality bar
 
-- **Content sketches must be specific.** "Show stats" is wrong — "76% Easy / 47% Hard / 450 Q's" is right. Pull from the outline.
+- **Content sketches must be specific.** "Show stats" is wrong — "76% Easy / 47% Hard / 450 Q's" is right. Pull from the brief.
 - **Don't repeat templates** without reason. If T9 appears 5 times, the deck is monotonous. Mix.
 - **Map dependencies in the arc.** A payoff slide can't precede its setup. If you find this, fix the order.
 - **Default to fewer slides.** 18 slides in 25 minutes = 1:23 each. That's fast. If beats are dense, cut, don't shrink.
 
 ## Anti-patterns
 
-- Don't generate placeholder slide content (lorem ipsum). Pull real beats from the outline. If the outline doesn't have content for a beat, list it under "Open questions".
+- Don't generate placeholder slide content (lorem ipsum). Pull real beats from the brief. If the brief doesn't have content for a beat, list it under "Open questions".
 - Don't propose new template IDs (T24, T25...). Use the existing 24.
 - Don't write the Dive JSX here — that's `dive-from-plan`'s job.
 - Don't auto-invoke `narrative-arc-reviewer` — recommend it; let the user decide.

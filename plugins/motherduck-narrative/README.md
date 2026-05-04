@@ -9,7 +9,7 @@ A Claude Code plugin that bundles the agents and skills for MotherDuck DevRel's 
 | Skill | Invocation | Purpose |
 |---|---|---|
 | `paper-style-guide` | both | Canonical design tokens + 24-template catalog for the Paper slide library. Auto-pulled when generating Dives or editing Paper. |
-| `slide-plan` | user-only (`/slide-plan`) | Outline → `slide-plan.md` with template assignments + `SLIDE_BUILD_COUNTS` array. |
+| `slide-plan` | user-only (`/slide-plan`) | Brief → `slide-plan.md` with template assignments + `SLIDE_BUILD_COUNTS` array. |
 | `dive-from-plan` | user-only (`/dive-from-plan`) | `slide-plan.md` → `dive.tsx` skeleton with chrome + per-template stubs + matching build wrappers. |
 | `motherduck-design-system` | both | MotherDuck marketing-website design system (fonts, colors, spacing, primitives) — distinct from the slide template tokens. |
 | `humanizer` | both | Remove signs of AI-generated writing — em-dash overuse, rule-of-three, inflated symbolism, vague attributions, negative parallelisms. Use as a final prose pass on drafts. |
@@ -18,7 +18,7 @@ A Claude Code plugin that bundles the agents and skills for MotherDuck DevRel's 
 
 | Agent | Use when |
 |---|---|
-| `narrative-arc-reviewer` | An outline / script / Dive is ready for a structural pass. Read-only. Returns a slide-level punch list + arc diagram + top-3 fixes. |
+| `narrative-arc-reviewer` | A brief / slide-plan / script / Dive is ready for a structural pass. Read-only. Returns a slide-level punch list + arc diagram + top-3 fixes. |
 | `paper-cohesion-auditor` | The Paper template library has had multiple authors / agents touch it. Detects token drift, header collisions, footer drift, font leaks. Reports or fixes. |
 
 ## Install
@@ -54,7 +54,7 @@ See **[WORKFLOW.md](./WORKFLOW.md)** for a detailed walkthrough of each stage. V
 The skills chain naturally:
 
 ```
-1. Draft outline.md
+1. Draft brief.md
 2. /slide-plan projects/<slug>           → slide-plan.md
 3. (recommended) Spawn narrative-arc-reviewer subagent on slide-plan.md
 4. /dive-from-plan projects/<slug>       → dive.tsx skeleton

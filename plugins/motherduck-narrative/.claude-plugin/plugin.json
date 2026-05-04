@@ -1,7 +1,7 @@
 {
   "name": "motherduck-narrative",
   "version": "0.1.0",
-  "description": "Narrative arc + slide/dive authoring tools for MotherDuck DevRel — outline → slide-plan → Dive JSX, with Paper template library style guide and design-system reviewers.",
+  "description": "Narrative arc + slide/dive authoring tools for MotherDuck DevRel — brief → slide-plan → Dive JSX, with Paper template library style guide and design-system reviewers.",
   "author": "MotherDuck DevRel",
   "license": "MIT",
   "keywords": [

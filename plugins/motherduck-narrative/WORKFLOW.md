@@ -1,11 +1,11 @@
-# Workflow — outline to published Dive
+# Workflow — brief to published Dive
 
 How the seven pieces of `motherduck-narrative` actually fit together. Read this once; refer back when something's unclear.
 
 ## The pipeline
 
 ```
-outline.md
+brief.md
     │
     │  /slide-plan
     ▼
@@ -32,18 +32,18 @@ Always-on context (auto-pulled when relevant):
 
 ## Stage-by-stage
 
-### 1. Draft the outline (manual)
+### 1. Draft the brief (manual)
 
-Write `projects/<MMDD-slug>/outline.md`. Cover the beats you want to hit, sources, any stats. Doesn't need to be slide-shaped yet — bullet points and paragraphs are fine.
+Write `projects/<MMDD-slug>/brief.md`. Cover the beats you want to hit, sources, any stats. Doesn't need to be slide-shaped yet — bullet points and paragraphs are fine.
 
-### 2. `/slide-plan` — outline → slide plan
+### 2. `/slide-plan` — brief → slide plan
 
 ```
 /slide-plan projects/0428-catalog-context-for-agents
 ```
 
 What it does:
-- Reads `outline.md` + any `script.md`, `draft.md`, `brief.md`
+- Reads `brief.md` + any `script.md`, `draft.md`, `outline.md`
 - Pulls the template catalog from `paper-style-guide`
 - Proposes 12–18 slides, each with: template ID, beat label, content sketch, build-step count
 - Writes `slide-plan.md` to the project directory
@@ -58,7 +58,7 @@ Spawn it on the slide plan:
 > "Review @projects/0428-.../slide-plan.md for narrative arc — return the punch list."
 
 What it does:
-- Reads the slide plan + outline
+- Reads the slide plan + brief
 - Evaluates hook strength, setup → payoff symmetry, beat sequencing, redundancy, transitions, tension, ending power
 - Returns a slide-level punch list (max 12 items), an ASCII arc diagram, and the top-3 fixes
 
@@ -121,7 +121,7 @@ These don't need to be invoked — they get pulled into context automatically wh
 
 ## Common deviations
 
-- **Skipping the slide plan**: you can go straight from outline to Dive, but you lose the structural review and the build-count audit. Don't.
+- **Skipping the slide plan**: you can go straight from brief to Dive, but you lose the structural review and the build-count audit. Don't.
 - **Skipping the narrative-arc reviewer**: fine for short Dives (<6 slides). For talks (12+ slides), don't skip — structural problems are 10x cheaper to fix in the plan than in the JSX.
 - **Running humanizer on the whole file**: heavy-handed; it'll touch code comments and template names. Run it on text spans.
 - **Skipping the cohesion audit**: fine if only one person/agent has touched the Paper file. If multiple agents have edited it (the common case), run it.
