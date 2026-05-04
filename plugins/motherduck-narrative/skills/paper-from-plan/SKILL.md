@@ -8,6 +8,8 @@ disable-model-invocation: true
 
 Take a finalized `slide-plan.md` and build out the Paper artboards for the talk/Dive — one artboard per slide, each cloned from the right template in the library and stamped with the slide's content sketch.
 
+See [examples/slide-plan.example.md](../../examples/slide-plan.example.md) for the exact format this skill parses.
+
 This is the bridge between the structured plan (markdown) and the visual artifact (Paper). After this skill runs you'll do pixel-perfect edits in Paper before exporting to a Dive via `/paper-to-dive`.
 
 ## Inputs
@@ -35,15 +37,38 @@ If a slide-plan entry references a template not in the library (e.g., T24, T-Cus
 Per slide:
 1. **Clone the template**. Use `mcp__plugin_paper-desktop_paper__duplicate_nodes` on the source artboard. Position the clone in a new vertical column at `left: 2530` (offset from the template library) at the appropriate `top` (1160px stride starting at -300, matching the template column convention).
 2. **Rename** the cloned artboard to `Slide N · <beat label>` via `rename_nodes`.
-3. **Stamp content** from the sketch:
-   - Eyebrow text → set to `— [BEAT NN · <LABEL>]`
-   - Page counter → set to `NN / TT` where TT is total slides
-   - Title / display text → swap placeholder for the sketch's headline
-   - Body / lead text → swap for the sketch's lead
-   - Stat values → swap `00%` etc. with real values from the sketch
-   - Code blocks → swap placeholder code for sketch code (if any)
-   - Build markers `▸ N` → leave as-is (build wiring is handled by `/paper-to-dive`)
-4. **Use `set_text_content`** for text swaps. Don't rewrite HTML structure unless the slide-plan demands a layout the template can't express (in which case flag and ask).
+3. **Discover content nodes by name**. Templates use stable layer names — use `get_children` recursively (or `get_tree_summary`) on the cloned artboard to find them. Common names: `Eyebrow`, `Page counter`, `Title block`, `Title`, `Lead`, `Statements`, `Bullets`, `KPI footer`, `Pair 1` / `Pair 2`, `Rows`, `Header`, `Footer`. The `descendantIdMap` returned by `duplicate_nodes` lets you translate a known source-template node ID into the cloned equivalent — use it where possible to avoid re-discovery.
+4. **Stamp content** from the sketch using the per-template cheat sheet below. Use `set_text_content` for text-only swaps. Don't rewrite HTML structure unless the slide-plan demands a layout the template can't express (in which case flag and ask).
+5. **Leave alone**: top hairline rule, footer chrome, build markers `▸ N`, dotted dividers, hard-offset shadows. The template provides these — don't touch.
+
+#### Per-template content-mapping cheat sheet
+
+| Template | Slots to fill |
+|---|---|
+| **T1** Hero | Eyebrow, Title (display, may use `\n` to balance lines), Page counter |
+| **T2** Big-stat | Eyebrow, Big number (digit text), Big number (unit text — often `%`), Caption (multi-line OK), Footer attribution |
+| **T3** Terminal | Eyebrow, Window title (`~/PATH · ENGINE Vn.n`), Code line, Result number, Result caption (`↳ ROWS · MB/s · THREADS`), Wall-time value |
+| **T4** Code-block | Eyebrow, Window title (filename), Window subtitle (LANGUAGE · RUNTIME), Code lines (one text node per line, preserve syntax-highlight color split if any) |
+| **T5** Data-table | Eyebrow, Header row text, Data rows (one set of cells per row — label + value), Highlighted-row callout |
+| **T6** Stat-cards | Eyebrow, Display headline, 3 cards (each: METRIC NAME, before→after subtitle, big stat value, description) |
+| **T7** Section header | Page counter, Section label (top-right), Section name eyebrow (left), Display title (may be 2 lines via `\n`), Sub-context strip |
+| **T8** Sequential | Eyebrow, 3 statement lines (3rd is orange), Page counter |
+| **T9** Title+bullets | Eyebrow, Title, Lead body, 3 bullets (each: bold heading + supporting clause), 3 KPI labels + 3 KPI values |
+| **T10** Stacked examples | Eyebrow, Pair 1 eyebrow, Pair 1 question, Pair 1 code-window title + code, Pair 2 same |
+| **T11** Architecture | Eyebrow, Title, Subtitle, 4 rows (each: category label + chip set + count) |
+| **T13** Delta rows | Eyebrow, Title, Subtitle, 3 rows (each: metric label + before value + after value + delta chip text), Footer insight |
+| **T15** Annotated chart | Eyebrow, Title, Subtitle, SVG chart values (poly points + axis labels), 3 callout texts, 3 KPI cards |
+| **T16** Numbered + chart | Eyebrow, Title, 3 numbered items (numeral stays, replace headline + body), Chart title, 4 bar values (`00%`), Tagline |
+| **T17** Quote | Eyebrow, Quote body, Attribution |
+| **T18** Two-col compare | Eyebrow, Title, Subtitle, Left col (eyebrow + headline + 4 bullets + KPI), Right col (same) |
+| **T19** Agenda | Eyebrow, Title (`AGENDA`), 6 rows (each: number stays, name + page ref) |
+| **T20** Speaker | Eyebrow, Display name, Role line, 3-paragraph bio, 4 handle chips |
+| **T21** Closing CTA | Eyebrow, Headline, Lead body, 4 CTA cards (each: label + URL), QR placeholder |
+| **T22** Process flow | Eyebrow, Title, 4 stage cards (each: stage name + body + KPI value), Footer tagline |
+| **T23** Dark hero | Eyebrow, Display title (may use `\n`), Supporting italic line |
+| **T8-Dark** | Same slots as T8, dark ground inherited from clone |
+
+If the slide-plan content sketch has fewer items than the template provides (e.g., only 2 bullets but T9 has 3), leave unused slots with their placeholder text — don't delete them. The user fills them in pixel-perfect editing.
 
 ### 4. Verify
 After all slides are placed, call `get_screenshot` on the first 2-3 cloned artboards to confirm the swaps landed cleanly. Don't audit the whole deck — that's `paper-cohesion-auditor`'s job.

@@ -135,11 +135,23 @@ Write to `<project-dir>/dive.tsx`. Report:
 - Slides whose `▸ N` markers didn't match the declared build count (so the user knows where to verify wiring)
 - Suggested next step: `mcp__claude_ai_MotherDuck__save_dive` once content checks pass; or, for live data, layer in Recharts components that pull from MotherDuck.
 
+## SVG handling
+
+Paper artboards routinely contain inline `<svg>` blocks for charts (T15, T16). Default rule: **preserve inline SVG as-is** in the extracted JSX. The Dive renders it the same way Paper does.
+
+Flag a slide for Recharts-ification (don't convert it yourself) when:
+- The slide-plan content sketch contains a phrase like "live data", "from `<table>`", "loaded from MotherDuck", or "updated on each render"
+- The SVG's data points look procedurally generated (e.g., uniform spacing, placeholder values like `00%` on every bar)
+- The user explicitly mentioned it during the slide-plan stage
+
+Don't convert. Just write a `// TODO: convert this slide to Recharts loading from MotherDuck` comment above the slide function and continue. The Recharts iteration is a separate manual stage (see *Iteration: live charts* below).
+
 ## Quality bar
 
 - **Strip `▸ N` build markers from the output.** They're authoring metadata. Replace each with the matching `fadeIn(build >= n)` wrapper around its sibling group.
 - **Use the `C` constants, not literal hexes.** Convert any `#FF9538` / `#383838` / `#F4EFEA` etc. in the extracted JSX to `C.orange` / `C.charcoal` / `C.cream`. Drift-prevention.
 - **Match `SLIDE_BUILD_COUNTS` to actual `fadeIn` wrappers.** If a slide says builds: 3 but you generated 4 wrappers, fix the wrappers before writing.
+- **Preserve inline SVG.** Don't try to convert chart SVG to React component libraries.
 - **Don't auto-save to MotherDuck.** The user runs `save_dive` themselves.
 
 ## Anti-patterns
@@ -151,11 +163,6 @@ Write to `<project-dir>/dive.tsx`. Report:
 
 ## Iteration: live charts
 
-Once `dive.tsx` is generated and saved as a static Dive, you may want one or more slides to load live data from MotherDuck and render via Recharts. That's a manual iteration:
+Once `dive.tsx` is generated and saved as a static Dive, you may want one or more slides to load live data from MotherDuck and render via Recharts. That's a manual iteration — this skill flags those slides via TODO comments but doesn't wire them.
 
-1. Pick a slide that should be live (e.g., the leaderboard, the per-iteration line chart).
-2. Add a `useEffect` that calls `mcp__claude_ai_MotherDuck__query` against your dataset.
-3. Replace the static SVG/inline data with a Recharts component (`<LineChart>`, `<BarChart>`, etc.) consuming the query result.
-4. Re-save the Dive.
-
-Don't try to make this skill do data wiring — it's per-slide and per-talk specific.
+The concrete recipe (loading states, error handling, query caching, useEffect vs. useSWR, etc.) is being deferred to a follow-up PR after the team ships a reference Dive that uses live data — see PR #89 discussion. Until then, treat any "live data" slide as a manual stage on top of `dive.tsx`.

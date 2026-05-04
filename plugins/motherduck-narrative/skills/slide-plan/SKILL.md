@@ -8,6 +8,8 @@ disable-model-invocation: true
 
 Turn a brief into a structured slide plan. Output is a `slide-plan.md` table that drives the Paper template work and the Dive implementation.
 
+See [examples/brief.example.md](../../examples/brief.example.md) for an example brief, and [examples/slide-plan.example.md](../../examples/slide-plan.example.md) for the exact output format expected by downstream skills.
+
 ## Inputs
 
 The user invokes with a project directory or brief path:
