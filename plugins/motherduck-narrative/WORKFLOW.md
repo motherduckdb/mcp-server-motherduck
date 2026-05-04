@@ -1,6 +1,6 @@
 # Workflow — brief to published Dive
 
-How the seven pieces of `motherduck-narrative` actually fit together. Read this once; refer back when something's unclear.
+How the pieces of `motherduck-narrative` fit together. Five stages, with optional review/cleanup helpers and a final iteration loop for live data.
 
 ## The pipeline
 
@@ -11,13 +11,18 @@ brief.md
     ▼
 slide-plan.md ◄── narrative-arc-reviewer (review)
     │
-    │  /dive-from-plan
+    │  /paper-from-plan
     ▼
-dive.tsx (skeleton with TODOs)
+Paper project (artboards, one per slide) ◄── paper-cohesion-auditor
     │
-    │  fill content manually
-    │  + humanizer  (prose cleanup pass)
-    │  + paper-cohesion-auditor  (Paper template QA before export)
+    │  manual: pixel-perfect visual edits in Paper
+    │
+    │  /paper-to-dive
+    ▼
+dive.tsx (slide nav + build counter + per-slide JSX)
+    │
+    │  fill in any text + humanizer (prose pass)
+    │  iterate: live MotherDuck data via Recharts (optional)
     │
     ▼
 mcp__claude_ai_MotherDuck__save_dive
@@ -32,9 +37,9 @@ Always-on context (auto-pulled when relevant):
 
 ## Stage-by-stage
 
-### 1. Draft the brief (manual)
+### 1. Add brief to context (manual)
 
-Write `projects/<MMDD-slug>/brief.md`. Cover the beats you want to hit, sources, any stats. Doesn't need to be slide-shaped yet — bullet points and paragraphs are fine.
+Put `projects/<MMDD-slug>/brief.md` (or your preferred name — outline.md, draft.md) in your Claude Code session. Cover the beats you want to hit, the thesis, sources, key stats. Doesn't need to be slide-shaped — bullet points and paragraphs are fine.
 
 ### 2. `/slide-plan` — brief → slide plan
 
@@ -47,9 +52,9 @@ What it does:
 - Pulls the template catalog from `paper-style-guide`
 - Proposes 12–18 slides, each with: template ID, beat label, content sketch, build-step count
 - Writes `slide-plan.md` to the project directory
-- Outputs the `SLIDE_BUILD_COUNTS` array ready to paste into the Dive
+- Outputs the `SLIDE_BUILD_COUNTS` array
 
-Output is a markdown table, not generated content. You'll iterate on it before moving on.
+The plan is markdown. Iterate on it before moving on.
 
 ### 3. `narrative-arc-reviewer` (subagent — recommended)
 
@@ -57,54 +62,75 @@ Spawn it on the slide plan:
 
 > "Review @projects/0428-.../slide-plan.md for narrative arc — return the punch list."
 
-What it does:
-- Reads the slide plan + brief
-- Evaluates hook strength, setup → payoff symmetry, beat sequencing, redundancy, transitions, tension, ending power
-- Returns a slide-level punch list (max 12 items), an ASCII arc diagram, and the top-3 fixes
+Returns a slide-level punch list (max 12 items), an ASCII arc diagram, and the top-3 fixes. Iterate on `slide-plan.md` based on its feedback.
 
-Iterate on `slide-plan.md` based on its feedback. Re-run if you've made structural changes.
-
-### 4. `/dive-from-plan` — slide plan → Dive skeleton
+### 4. `/paper-from-plan` — slide plan → Paper artboards
 
 ```
-/dive-from-plan projects/0428-catalog-context-for-agents
+/paper-from-plan projects/0428-catalog-context-for-agents/slide-plan.md
 ```
 
 What it does:
 - Reads `slide-plan.md`
-- Pulls canonical tokens + per-template stub patterns from `paper-style-guide`
-- Generates `dive.tsx` with: build counter wiring, `SLIDE_BUILD_COUNTS` array, `fadeIn` helper, `SlideChrome` component, one stub per slide with the right number of `fadeIn(build >= n)` wrappers, and `// TODO` comments referencing the content sketch from the plan
+- For each slide entry, clones the right template from the library (T1–T23, T8-Dark)
+- Stamps in the content from the sketch (eyebrow, title, body, stats, code)
+- Lays the cloned artboards in a new vertical column in Paper
 
-Output is a skeleton, not a finished Dive. You fill in the content.
+After this runs you have a draft visual deck — but not pixel-perfect. The next stage is manual.
 
-### 5. Fill in content (manual)
+### 5. Pixel-perfect Paper edits (manual)
 
-Replace each `// TODO` with real content. Keep using the canonical tokens — `paper-style-guide` is in context so Claude won't drift.
+Open the Paper file. For each slide:
+- Tighten alignment, content sizing, vertical rhythm
+- Drop in real images, screenshots, terminal captures
+- Adjust per-slide variations the template doesn't support (a row of 4 instead of 3, a custom annotation, etc.)
+- Verify the slide reads at presentation distance
 
-### 6. `humanizer` skill (recommended)
+This is the stage where the deck stops being procedurally generated and starts being a thing. Don't skip it.
 
-Run it on any prose-heavy parts (callouts, quotes, italic taglines, body lines):
+### 6. `paper-cohesion-auditor` (subagent — recommended before generating the Dive)
 
-> "/humanize the body text in dive.tsx slide 7"
-
-What it does:
-- Removes em-dash overuse, rule-of-three, inflated symbolism, vague attributions, AI vocabulary (delve, leverage, robust, etc.), negative parallelisms ("not just X, but Y")
-- Returns cleaned prose
-
-Skip it for code, SQL, terminal output. Use it on anything readable.
-
-### 7. `paper-cohesion-auditor` (subagent — recommended before export)
-
-If you've used Paper templates as the visual source of truth and you're about to export screenshots or hand off to design:
+If multiple agents (or people) have edited the Paper artboards, run the cohesion audit:
 
 > "Run paper-cohesion-auditor on the Slide Deck Template file."
 
-What it does:
-- Enumerates artboards via the Paper MCP
-- Detects token drift (`#FF7169` ≠ `#FF9538`, `#2D2D2D` ≠ `#383838`, etc.), header-row collisions, footer drift, font-family leaks, shadow direction mistakes, alignment / overflow
-- Reports a punch list, OR (if you say "fix it") applies fixes via `update_styles` / `set_text_content` / `delete_nodes`
+Detects token drift, header collisions, footer drift, font leaks. Reports a punch list, or fixes them in place if you say "fix it".
 
-### 8. Save to MotherDuck
+### 7. `/paper-to-dive` — Paper artboards → dive.tsx
+
+```
+/paper-to-dive projects/0428-catalog-context-for-agents/slide-plan.md
+```
+
+What it does:
+- Reads `slide-plan.md` for slide order + `SLIDE_BUILD_COUNTS`
+- For each artboard, calls `get_jsx` and wraps the content in a per-slide React function
+- Replaces `▸ N` build markers with `fadeIn(build >= n)` wrappers
+- Wires slide navigation: keyboard arrows + click-to-advance + back
+- Replaces literal hex tokens with the canonical `C` constants
+
+Output: a renderable `dive.tsx` with slide nav and build progression baked in.
+
+### 8. Fill text + `humanizer` (recommended)
+
+If any slide content was placeholder, fill it now. Then run `humanizer` on prose-heavy parts (callouts, quotes, italic taglines) to remove em-dash overuse, AI vocabulary, vague attributions, etc.
+
+> "/humanize the body text in dive.tsx slide 7"
+
+Skip for code, SQL, terminal output. Use it on anything readable.
+
+### 9. Iterate: live MotherDuck charts via Recharts (optional)
+
+For slides that should show live data — leaderboards that update with new submissions, line charts that pull from a `bench_runs` table, etc. — layer Recharts on top:
+
+1. Pick the slide that should be live (e.g., the scoreboard)
+2. Add a `useEffect` calling `mcp__claude_ai_MotherDuck__query` against your dataset
+3. Replace the static SVG/inline data with a Recharts component
+4. Re-save the Dive
+
+Don't try to do this for every slide — only the ones where freshness matters. Static is fine for setup, examples, transitions.
+
+### 10. Save to MotherDuck
 
 ```
 mcp__claude_ai_MotherDuck__save_dive
@@ -114,17 +140,17 @@ The Dive lives at `app.motherduck.com/dives/<slug>-<uuid>`.
 
 ## Reference skills (always-on)
 
-These don't need to be invoked — they get pulled into context automatically when their topic comes up:
-
 - **`paper-style-guide`** — pulled when generating Dives, editing Paper, or building slide plans. Source of truth for tokens and templates.
 - **`motherduck-design-system`** — pulled when editing `packages/mkt`, `packages/ui`, or any web page that references the Dive. Source of truth for site fonts, colors, primitives.
 
 ## Common deviations
 
-- **Skipping the slide plan**: you can go straight from brief to Dive, but you lose the structural review and the build-count audit. Don't.
-- **Skipping the narrative-arc reviewer**: fine for short Dives (<6 slides). For talks (12+ slides), don't skip — structural problems are 10x cheaper to fix in the plan than in the JSX.
+- **Skipping the slide plan**: you lose the structural review and the build-count audit. Don't.
+- **Skipping the narrative-arc reviewer**: fine for short Dives (<6 slides). For talks (12+ slides), don't skip — structural problems are 10× cheaper to fix in the plan than in JSX.
+- **Skipping `/paper-from-plan` and going straight to Dive code**: you lose the visual iteration loop. Possible but only for very simple decks (e.g., all T1/T2/T3).
+- **Skipping the manual Paper edits**: the result will look procedurally generated. Don't ship without a pass.
+- **Skipping `paper-cohesion-auditor`**: fine if only one person/agent has touched the Paper file. If multiple agents edited it (the common case), run it.
 - **Running humanizer on the whole file**: heavy-handed; it'll touch code comments and template names. Run it on text spans.
-- **Skipping the cohesion audit**: fine if only one person/agent has touched the Paper file. If multiple agents have edited it (the common case), run it.
 
 ## When to update this plugin
 

@@ -10,7 +10,8 @@ A Claude Code plugin that bundles the agents and skills for MotherDuck DevRel's 
 |---|---|---|
 | `paper-style-guide` | both | Canonical design tokens + 24-template catalog for the Paper slide library. Auto-pulled when generating Dives or editing Paper. |
 | `slide-plan` | user-only (`/slide-plan`) | Brief → `slide-plan.md` with template assignments + `SLIDE_BUILD_COUNTS` array. |
-| `dive-from-plan` | user-only (`/dive-from-plan`) | `slide-plan.md` → `dive.tsx` skeleton with chrome + per-template stubs + matching build wrappers. |
+| `paper-from-plan` | user-only (`/paper-from-plan`) | `slide-plan.md` → Paper artboards (one per slide), cloned from the template library and stamped with content sketches. |
+| `paper-to-dive` | user-only (`/paper-to-dive`) | Finished Paper artboards → `dive.tsx` with slide navigation, build counter, fadeIn wrappers, and per-slide JSX extracted from Paper. |
 | `motherduck-design-system` | both | MotherDuck marketing-website design system (fonts, colors, spacing, primitives) — distinct from the slide template tokens. |
 | `humanizer` | both | Remove signs of AI-generated writing — em-dash overuse, rule-of-three, inflated symbolism, vague attributions, negative parallelisms. Use as a final prose pass on drafts. |
 
@@ -55,12 +56,15 @@ The skills chain naturally:
 
 ```
 1. Draft brief.md
-2. /slide-plan projects/<slug>           → slide-plan.md
-3. (recommended) Spawn narrative-arc-reviewer subagent on slide-plan.md
-4. /dive-from-plan projects/<slug>       → dive.tsx skeleton
-5. Fill in TODO content in dive.tsx
-6. Save to MotherDuck via the Dive MCP
-7. (recommended) Spawn paper-cohesion-auditor before exporting deck assets
+2. /slide-plan projects/<slug>                  → slide-plan.md
+3. (recommended) narrative-arc-reviewer subagent on slide-plan.md
+4. /paper-from-plan projects/<slug>             → Paper artboards (one per slide)
+5. Pixel-perfect manual edits in Paper
+6. (recommended) paper-cohesion-auditor subagent
+7. /paper-to-dive projects/<slug>               → dive.tsx with slide nav + build counter
+8. Fill any text + humanizer (prose pass)
+9. Iterate: layer in MotherDuck-loaded charts via Recharts (optional)
+10. Save to MotherDuck via mcp__claude_ai_MotherDuck__save_dive
 ```
 
 `paper-style-guide` and `motherduck-design-system` are reference skills — they get pulled into context whenever you're touching slides, Dives, or website code, so you stop drifting tokens.

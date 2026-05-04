@@ -7,7 +7,7 @@
     {
       "name": "motherduck-narrative",
       "source": "./plugins/motherduck-narrative",
-      "description": "Slide/Dive narrative authoring + Paper template library + design-system reviewers for MotherDuck DevRel."
+      "description": "Brief → slide-plan → Paper → Dive narrative authoring pipeline for MotherDuck DevRel, with template library + cohesion auditor."
     }
   ]
 }
