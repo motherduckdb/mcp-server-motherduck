@@ -1,0 +1,13 @@
+{
+  "name": "motherduck-devrel",
+  "owner": {
+    "name": "MotherDuck DevRel"
+  },
+  "plugins": [
+    {
+      "name": "motherduck-narrative",
+      "source": "./plugins/motherduck-narrative",
+      "description": "Slide/Dive narrative authoring + Paper template library + design-system reviewers for MotherDuck DevRel."
+    }
+  ]
+}
