@@ -12,6 +12,7 @@ A Claude Code plugin that bundles the agents and skills for MotherDuck DevRel's 
 | `slide-plan` | user-only (`/slide-plan`) | Outline → `slide-plan.md` with template assignments + `SLIDE_BUILD_COUNTS` array. |
 | `dive-from-plan` | user-only (`/dive-from-plan`) | `slide-plan.md` → `dive.tsx` skeleton with chrome + per-template stubs + matching build wrappers. |
 | `motherduck-design-system` | both | MotherDuck marketing-website design system (fonts, colors, spacing, primitives) — distinct from the slide template tokens. |
+| `humanizer` | both | Remove signs of AI-generated writing — em-dash overuse, rule-of-three, inflated symbolism, vague attributions, negative parallelisms. Use as a final prose pass on drafts. |
 
 ### Subagents
 
