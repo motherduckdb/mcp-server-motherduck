@@ -49,6 +49,8 @@ ln -s ~/code/mcp-server-motherduck/plugins/motherduck-narrative/agents .claude/a
 
 ## Workflow
 
+See **[WORKFLOW.md](./WORKFLOW.md)** for a detailed walkthrough of each stage. Visual flow chart in the team Paper file (`Slide Deck Template` → `Workflow chart — narrative plugin` artboard).
+
 The skills chain naturally:
 
 ```
