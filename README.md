@@ -212,6 +212,25 @@ For production deployments with third-party access, we recommend **[MotherDuck R
 
 **Self-hosting DuckDB MCP:** Use `--init-sql` to apply security settings. See the [Securing DuckDB guide](https://duckdb.org/docs/stable/operations_manual/securing_duckdb/overview) for available options.
 
+## Docker
+
+Build and run the server with Streamable HTTP on port 8000 (defaults to an in-memory DuckDB):
+
+```bash
+docker build -t mcp-server-motherduck .
+docker run --rm -p 8000:8000 mcp-server-motherduck
+```
+
+Connect to MotherDuck by passing a token and overriding the command:
+
+```bash
+docker run --rm -p 8000:8000 \
+  -e motherduck_token="$MOTHERDUCK_TOKEN" \
+  mcp-server-motherduck --transport http --db-path md:
+```
+
+The MCP endpoint is available at `http://localhost:8000/mcp`. CLI flags and env vars from below still apply.
+
 ## Command Line Parameters
 
 | Parameter | Default | Description |
