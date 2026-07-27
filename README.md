@@ -1,3 +1,5 @@
+[![MCP Toplist](https://mcptoplist.com/badge/io.github.motherduckdb%2Fmcp-server-motherduck.svg)](https://mcptoplist.com/server/io.github.motherduckdb%2Fmcp-server-motherduck)
+
 <p align="center">
   <img src="src/mcp_server_motherduck/assets/duck_feet_square.png" alt="MotherDuck / DuckDB Local MCP Server" width="120">
 </p>
