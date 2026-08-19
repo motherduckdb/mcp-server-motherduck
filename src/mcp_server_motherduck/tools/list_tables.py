@@ -34,6 +34,40 @@ def list_tables(
             _, _, db_rows = db_client.execute_raw("SELECT current_database()")
             database = db_rows[0][0]
 
+        # Validate explicit catalog filters so an unknown database or schema is
+        # distinguishable from an existing catalog that contains no objects.
+        _, _, database_rows = db_client.execute_raw(f"""
+            SELECT 1
+            FROM duckdb_databases()
+            WHERE database_name = {quote_sql_string(database)}
+            LIMIT 1
+        """)
+        if not database_rows:
+            return {
+                "success": False,
+                "database": database,
+                "schema": schema or "all",
+                "error": f"Database not found: {database}",
+                "errorType": "NotFoundError",
+            }
+
+        if schema is not None:
+            _, _, schema_rows = db_client.execute_raw(f"""
+                SELECT 1
+                FROM duckdb_schemas()
+                WHERE database_name = {quote_sql_string(database)}
+                  AND schema_name = {quote_sql_string(schema)}
+                LIMIT 1
+            """)
+            if not schema_rows:
+                return {
+                    "success": False,
+                    "database": database,
+                    "schema": schema,
+                    "error": f"Schema not found: {database}.{schema}",
+                    "errorType": "NotFoundError",
+                }
+
         # Build schema filter
         schema_filter = f"AND schema_name = {quote_sql_string(schema)}" if schema else ""
 
