@@ -187,7 +187,7 @@ async def test_list_columns_view(memory_client):
 
 @pytest.mark.asyncio
 async def test_list_columns_nonexistent_table(memory_client):
-    """list_columns returns empty for nonexistent table."""
+    """list_columns returns an explicit error for a nonexistent table."""
     result = await memory_client.call_tool_mcp(
         "list_columns",
         {"database": "memory", "table": "nonexistent_table_xyz"},
@@ -195,19 +195,61 @@ async def test_list_columns_nonexistent_table(memory_client):
     assert result.isError is False
 
     data = parse_json_result(result)
-    assert data["success"] is True
-    assert data["columnCount"] == 0
-    assert data["columns"] == []
+    assert data["success"] is False
+    assert data["errorType"] == "NotFoundError"
+    assert data["database"] == "memory"
+    assert data["schema"] == "main"
+    assert data["table"] == "nonexistent_table_xyz"
 
 
 @pytest.mark.asyncio
 async def test_list_tables_nonexistent_database(memory_client):
-    """list_tables returns error for nonexistent database."""
+    """list_tables returns an explicit error for a nonexistent database."""
     result = await memory_client.call_tool_mcp("list_tables", {"database": "nonexistent_db_xyz"})
-    # This might succeed with empty results or fail depending on DuckDB behavior
+    assert result.isError is False
+
     data = parse_json_result(result)
-    # Either success with no tables or error is acceptable
-    assert "success" in data
+    assert data["success"] is False
+    assert data["errorType"] == "NotFoundError"
+    assert data["database"] == "nonexistent_db_xyz"
+
+
+@pytest.mark.asyncio
+async def test_list_tables_nonexistent_schema(memory_client):
+    """list_tables returns an explicit error for a nonexistent schema."""
+    result = await memory_client.call_tool_mcp(
+        "list_tables",
+        {"database": "memory", "schema": "nonexistent_schema_xyz"},
+    )
+    assert result.isError is False
+
+    data = parse_json_result(result)
+    assert data["success"] is False
+    assert data["errorType"] == "NotFoundError"
+    assert data["database"] == "memory"
+    assert data["schema"] == "nonexistent_schema_xyz"
+
+
+@pytest.mark.asyncio
+async def test_list_tables_empty_schema(memory_client):
+    """list_tables preserves successful empty results for an existing schema."""
+    await memory_client.call_tool_mcp(
+        "execute_query",
+        {"sql": "CREATE SCHEMA empty_schema"},
+    )
+
+    result = await memory_client.call_tool_mcp(
+        "list_tables",
+        {"database": "memory", "schema": "empty_schema"},
+    )
+    assert result.isError is False
+
+    data = parse_json_result(result)
+    assert data["success"] is True
+    assert data["schema"] == "empty_schema"
+    assert data["tables"] == []
+    assert data["tableCount"] == 0
+    assert data["viewCount"] == 0
 
 
 @pytest.mark.asyncio

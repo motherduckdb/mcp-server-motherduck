@@ -41,6 +41,38 @@ def list_columns(
             _, _, schema_rows = db_client.execute_raw("SELECT current_schema()")
             schema = schema_rows[0][0]
 
+        # Resolve the object first so a missing table/view is not reported as an
+        # existing table with zero columns.
+        _, _, object_rows = db_client.execute_raw(f"""
+            SELECT object_type
+            FROM (
+                SELECT 'table' AS object_type
+                FROM duckdb_tables()
+                WHERE database_name = {quote_sql_string(database)}
+                  AND schema_name = {quote_sql_string(schema)}
+                  AND table_name = {quote_sql_string(table)}
+
+                UNION ALL
+
+                SELECT 'view' AS object_type
+                FROM duckdb_views()
+                WHERE database_name = {quote_sql_string(database)}
+                  AND schema_name = {quote_sql_string(schema)}
+                  AND view_name = {quote_sql_string(table)}
+            )
+            LIMIT 1
+        """)
+        if not object_rows:
+            return {
+                "success": False,
+                "database": database,
+                "schema": schema,
+                "table": table,
+                "error": f"Table or view not found: {database}.{schema}.{table}",
+                "errorType": "NotFoundError",
+            }
+        object_type = object_rows[0][0]
+
         # Query columns using DuckDB system function
         sql = f"""
             SELECT
@@ -67,21 +99,6 @@ def list_columns(
             }
             for row in rows
         ]
-
-        # Determine if it's a view or table
-        object_type = "table"
-        try:
-            _, _, view_rows = db_client.execute_raw(f"""
-                SELECT 1 FROM duckdb_views()
-                WHERE database_name = {quote_sql_string(database)}
-                  AND schema_name = {quote_sql_string(schema)}
-                  AND view_name = {quote_sql_string(table)}
-                LIMIT 1
-            """)
-            if view_rows:
-                object_type = "view"
-        except Exception:
-            pass  # Assume table if check fails
 
         return {
             "success": True,
