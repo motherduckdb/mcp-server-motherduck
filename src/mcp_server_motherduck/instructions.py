@@ -25,6 +25,21 @@ INSTRUCTIONS_BASE = """Execute SQL queries against DuckDB and MotherDuck databas
 - Use double quotes (`"`) for identifiers with spaces/special characters or case-sensitivity
 - Use single quotes (`'`) for string literals
 
+### Identifier Quoting
+
+`list_tables` and `list_columns` return `name` values in SQL-ready form.
+Names that require quoting are already double-quoted — use them directly in SQL
+without adding additional quotes.
+
+Identifiers are quoted when they:
+- Contain special characters (hyphens, spaces, colons): `"ACSDT5Y2023_B19080-Data"`
+- Start with a digit: `"2023_sales"`
+- Are DuckDB reserved words: `"select"`, `"table"`, `"order"`
+- Need case preservation: `"firstName"` (DuckDB folds unquoted to lowercase)
+
+Best practice: call `list_tables`/`list_columns` before writing queries against
+unfamiliar databases, and use the returned names directly in your SQL.
+
 **Flexible Query Structure:**
 - Queries can start with `FROM`: `FROM my_table WHERE condition;`
 - `SELECT` without `FROM` for expressions: `SELECT 1 + 1 AS result;`
