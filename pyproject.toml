@@ -6,7 +6,7 @@ readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
     "duckdb==1.5.5",
-    "fastmcp>=3.2",
+    "fastmcp>=4.0",
     "click>=8.1.8",
     "pytz>=2025.2",
 ]
@@ -17,6 +17,7 @@ email = "till@motherduck.com"
 
 [project.optional-dependencies]
 dev = [
+    "httpx>=0.27",
     "pytest>=8.0",
     "pytest-asyncio>=0.24",
     "python-dotenv>=1.0",
