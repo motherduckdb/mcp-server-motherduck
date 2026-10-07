@@ -133,8 +133,7 @@ async def test_init_sql_file_with_multiple_function_macros(tmp_path):
 
     sql_file = tmp_path / "macros.sql"
     sql_file.write_text(
-        "CREATE OR REPLACE FUNCTION func_a() AS (1);\n"
-        "CREATE OR REPLACE FUNCTION func_b() AS (2);\n"
+        "CREATE OR REPLACE FUNCTION func_a() AS (1);\nCREATE OR REPLACE FUNCTION func_b() AS (2);\n"
     )
 
     mcp = create_mcp_server(db_path=":memory:", init_sql=str(sql_file))
@@ -194,3 +193,53 @@ async def test_init_sql_nonexistent_file():
         assert result.isError is True
         text = get_result_text(result)
         assert "Init SQL execution failed" in text
+
+
+@pytest.fixture
+def read_only_database(tmp_path):
+    """Create a local database that uses temporary read-only connections."""
+    import duckdb
+
+    db_file = tmp_path / "test.duckdb"
+    with duckdb.connect(str(db_file)) as conn:
+        conn.execute("CREATE TABLE t (id INTEGER)")
+        conn.execute("INSERT INTO t VALUES (42)")
+    return db_file
+
+
+@pytest.mark.asyncio
+async def test_init_sql_ephemeral_connections_invalid(read_only_database):
+    """Invalid init SQL raises an error on an ephemeral connection."""
+    from mcp_server_motherduck.server import create_mcp_server
+
+    mcp = create_mcp_server(
+        db_path=str(read_only_database),
+        read_only=True,
+        ephemeral_connections=True,
+        init_sql="THIS IS NOT VALID SQL SYNTAX!!!",
+    )
+    async with Client(mcp) as client:
+        result = await client.call_tool_mcp("execute_query", {"sql": "SELECT 1"})
+        assert result.isError is True
+        assert "Init SQL execution failed" in get_result_text(result)
+
+
+@pytest.mark.asyncio
+async def test_init_sql_ephemeral_connections_valid(read_only_database):
+    """Init SQL is applied to each ephemeral connection before its query."""
+    from mcp_server_motherduck.server import create_mcp_server
+
+    mcp = create_mcp_server(
+        db_path=str(read_only_database),
+        read_only=True,
+        ephemeral_connections=True,
+        init_sql="SET threads = 1;",
+    )
+    async with Client(mcp) as client:
+        result = await client.call_tool_mcp(
+            "execute_query",
+            {"sql": "SELECT id, current_setting('threads') FROM t"},
+        )
+        data = parse_json_result(result)
+        assert data["success"] is True
+        assert data["rows"] == [[42, 1]]

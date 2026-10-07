@@ -5,10 +5,10 @@ description = "A MCP server for MotherDuck and local DuckDB"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
-    "duckdb==1.5.5",
-    "fastmcp>=3.2",
-    "click>=8.1.8",
-    "pytz>=2025.2",
+    "duckdb==1.5.6",
+    "fastmcp>=4.0.11",
+    "click>=8.5.0",
+    "pytz>=2026.5",
 ]
 
 [[project.authors]]
@@ -17,10 +17,11 @@ email = "till@motherduck.com"
 
 [project.optional-dependencies]
 dev = [
-    "pytest>=8.0",
-    "pytest-asyncio>=0.24",
-    "python-dotenv>=1.0",
-    "ruff>=0.4.0",
+    "httpx>=0.28.1",
+    "pytest>=9.1.1",
+    "pytest-asyncio>=1.4.0",
+    "python-dotenv>=1.2.4",
+    "ruff>=0.16.10",
 ]
 
 [build-system]
@@ -66,7 +67,7 @@ tag = false
 
 [dependency-groups]
 dev = [
-    "pre-commit>=4.5.1",
-    "pytest>=9.0.2",
-    "pytest-asyncio>=1.3.0",
+    "pre-commit>=4.6.2",
+    "pytest>=9.1.1",
+    "pytest-asyncio>=1.4.0",
 ]
