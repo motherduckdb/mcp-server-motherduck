@@ -324,6 +324,12 @@ class DatabaseClient:
             conn = self.conn
 
         try:
+            # Temporary connections must receive the same initialization as
+            # persistent connections. Keep this inside the try so failures
+            # still close the temporary connection in the finally block.
+            if self.conn is None:
+                self._execute_init_sql(conn)
+
             # Execute with or without timeout
             if self._query_timeout > 0:
                 columns, column_types, rows, has_more_rows = self._execute_with_timeout(conn, query)
@@ -439,6 +445,9 @@ class DatabaseClient:
             conn = self.conn
 
         try:
+            if self.conn is None:
+                self._execute_init_sql(conn)
+
             q = conn.execute(query)
             columns = [d[0] for d in q.description] if q.description else []
             column_types = [str(d[1]) for d in q.description] if q.description else []
