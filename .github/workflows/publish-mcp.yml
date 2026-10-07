@@ -73,14 +73,18 @@ jobs:
           node-version: '20'
       
       - name: Install MCP Publisher
+        env:
+          MCP_PUBLISHER_VERSION: "1.8.1"
+          MCP_PUBLISHER_SHA256: "a06c9096dcb9727c13555b6be26c7effa707b01f06a4c561ba7a3635443cf2cc"
         run: |
-          # Clone and build the MCP publisher
-          git clone https://github.com/modelcontextprotocol/registry publisher-repo
-          cd publisher-repo
-          make publisher
-          cp bin/mcp-publisher ../mcp-publisher
-          cd ..
+          archive="mcp-publisher_linux_amd64.tar.gz"
+          curl --fail --location --retry 3 \
+            --output "$archive" \
+            "https://github.com/modelcontextprotocol/registry/releases/download/v${MCP_PUBLISHER_VERSION}/${archive}"
+          echo "${MCP_PUBLISHER_SHA256}  ${archive}" | sha256sum --check -
+          tar -xzf "$archive" mcp-publisher
           chmod +x mcp-publisher
+          ./mcp-publisher --version
       
       - name: Login to MCP Registry
         run: ./mcp-publisher login github-oidc
