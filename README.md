@@ -23,11 +23,6 @@ Connect AI assistants to your data using DuckDB's powerful analytical SQL engine
 | **Access** | Read-write supported | Read-write supported |
 | **Local filesystem** | - | Query across local and remote databases, ingest data from / export data to local filesystem |
 
-> 📝 **Migrating from v0.x?**
-> - **Read-only by default**: The server now runs in read-only mode by default. Add `--read-write` to enable write access. See [Securing for Production](#securing-for-production).
-> - **Default database changed**: `--db-path` default changed from `md:` to `:memory:`. Add `--db-path md:` explicitly for MotherDuck.
-> - **MotherDuck read-only requires read-scaling token**: MotherDuck connections in read-only mode require a [read-scaling token](https://motherduck.com/docs/key-tasks/authenticating-and-connecting-to-motherduck/authenticating-to-motherduck/#read-scaling-tokens). Regular tokens require `--read-write`.
-
 ## Quick Start
 
 **Prerequisites**: Install `uv` via `pip install uv` or `brew install uv`
