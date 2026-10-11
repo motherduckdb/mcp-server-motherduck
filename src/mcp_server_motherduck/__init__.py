@@ -138,6 +138,15 @@ logging.basicConfig(level=logging.INFO, format="[motherduck] %(levelname)s - %(m
     hidden=True,
     help="[DEPRECATED] No longer needed, JSON responses are automatic.",
 )
+@click.option(
+    "--show-banner/--no-banner",
+    default=True,
+    envvar=[
+        "FASTMCP_SHOW_CLI_BANNER",
+        "FASTMCP_SHOW_SERVER_BANNER",
+    ],
+    help="Whether to display the FastMCP server banner.",
+)
 def main(
     port: int,
     host: str,
@@ -159,6 +168,7 @@ def main(
     saas_mode: bool,
     read_only: bool,
     json_response: bool,
+    show_banner: bool,
 ) -> None:
     """MotherDuck MCP Server - Execute SQL queries via DuckDB/MotherDuck."""
     # Handle deprecated flags with warnings
@@ -269,11 +279,17 @@ def main(
         logger.info(
             f"🦆 Connect to MotherDuck MCP Server at \033[1m\033[36mhttp://{host}:{port}/mcp\033[0m"
         )
-        mcp.run(transport="http", host=host, port=port, stateless_http=stateless_http)
+        mcp.run(
+            transport="http",
+            host=host,
+            port=port,
+            stateless_http=stateless_http,
+            show_banner=show_banner,
+        )
     else:
         logger.info("MCP server initialized in \033[32mstdio\033[0m mode")
         logger.info("Waiting for client connection")
-        mcp.run(transport="stdio")
+        mcp.run(transport="stdio", show_banner=show_banner)
 
 
 # Optionally expose other important items at package level
