@@ -352,8 +352,8 @@ class DatabaseClient:
                     f"Results limited to {self._max_rows:,} rows. Query returned more data."
                 )
 
-            # Check character limit on JSON output
-            json_output = json.dumps(result, default=str)
+            # Match the indented JSON returned by the execute_query MCP tool.
+            json_output = json.dumps(result, indent=2, default=str)
             if len(json_output) > self._max_chars:
                 # Progressively reduce rows until under limit
                 while rows and len(json_output) > self._max_chars:
@@ -367,7 +367,7 @@ class DatabaseClient:
                         f"Results limited to {len(rows):,} rows due to "
                         f"{self._max_chars // 1000}KB output size limit."
                     )
-                    json_output = json.dumps(result, default=str)
+                    json_output = json.dumps(result, indent=2, default=str)
 
             return result
 
