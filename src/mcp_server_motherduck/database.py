@@ -468,23 +468,32 @@ class DatabaseClient:
             path: New database path (local file, :memory:, or md:database_name)
             read_only: Whether to connect in read-only mode
         """
-        # Close existing connection if any
+        new_db_path, new_db_type = self._resolve_db_path_type(
+            path, self._motherduck_token, self._saas_mode
+        )
+
+        # Open the new database before touching the current one, so a failed
+        # switch (bad file, bad token, failing init SQL) leaves the current
+        # connection and its state usable. Closing first would also drop all
+        # data in an in-memory database.
+        previous_state = (self._read_only, self.user_db_path, self.db_path, self.db_type)
+        self._read_only = read_only
+        self.user_db_path = path
+        self.db_path, self.db_type = new_db_path, new_db_type
+        try:
+            # None for read-only local DuckDB (ephemeral connections)
+            new_conn = self._initialize_connection()
+        except Exception:
+            self._read_only, self.user_db_path, self.db_path, self.db_type = previous_state
+            raise
+
+        # Close the previous connection now that the new one is ready
         if self.conn is not None:
             try:
                 self.conn.close()
             except Exception:
                 pass  # Ignore close errors
-            self.conn = None
-
-        # Update database configuration
-        self._read_only = read_only
-        self.user_db_path = path
-        self.db_path, self.db_type = self._resolve_db_path_type(
-            path, self._motherduck_token, self._saas_mode
-        )
-
-        # Re-initialize connection (will be None for read-only local DuckDB)
-        self.conn = self._initialize_connection()
+        self.conn = new_conn
         self._conn_initialized = True
 
         logger.info(f"Switched to database: {path} (read_only={read_only})")
