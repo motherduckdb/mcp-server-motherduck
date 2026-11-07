@@ -461,8 +461,10 @@ class DatabaseClient:
         """
         Switch to a different primary database.
 
-        Closes any existing connection and updates the database path.
-        The next query will connect to the new database.
+        Initializes a connection to the new database (including any init SQL)
+        before replacing the existing one, then closes the previous
+        connection. If initialization fails, the exception is raised and the
+        current connection, path and read-only setting are left unchanged.
 
         Args:
             path: New database path (local file, :memory:, or md:database_name)
