@@ -160,6 +160,71 @@ class TestSwitchDatabaseConnection:
         data = parse_json_result(result)
         assert data["success"] is False
 
+    @pytest.mark.asyncio
+    async def test_failed_switch_keeps_previous_database(self, memory_client_with_switch, tmp_path):
+        """A switch that fails to open the new database leaves the current one usable."""
+        create_result = await memory_client_with_switch.call_tool_mcp(
+            "execute_query",
+            {"sql": "CREATE TABLE kept_table AS SELECT 42 AS answer"},
+        )
+        assert parse_json_result(create_result)["success"] is True
+
+        not_a_database = tmp_path / "not_a_database.duckdb"
+        not_a_database.write_text("this is not a duckdb file")
+        switch_result = await memory_client_with_switch.call_tool_mcp(
+            "switch_database_connection",
+            {"path": str(not_a_database)},
+        )
+        assert parse_json_result(switch_result)["success"] is False
+
+        query_result = await memory_client_with_switch.call_tool_mcp(
+            "execute_query",
+            {"sql": "SELECT answer FROM kept_table"},
+        )
+        data = parse_json_result(query_result)
+        assert data["success"] is True, data
+        assert data["rows"] == [[42]]
+
+    @pytest.mark.asyncio
+    async def test_failed_motherduck_switch_keeps_previous_database(
+        self, motherduck_token_read_scaling
+    ):
+        """A failed MotherDuck switch leaves the current connection usable."""
+        import uuid
+
+        from fastmcp import Client
+
+        from mcp_server_motherduck.server import create_mcp_server
+
+        mcp = create_mcp_server(
+            db_path="md:",
+            motherduck_token=motherduck_token_read_scaling,
+            read_only=True,
+            allow_switch_databases=True,
+        )
+
+        async with Client(mcp) as client:
+            before_result = await client.call_tool_mcp(
+                "execute_query", {"sql": "SELECT current_database()"}
+            )
+            before_data = parse_json_result(before_result)
+            assert before_data["success"] is True
+            before_database = before_data["rows"][0][0]
+
+            missing_database = f"md:missing_{uuid.uuid4().hex}"
+            switch_result = await client.call_tool_mcp(
+                "switch_database_connection",
+                {"path": missing_database},
+            )
+            assert parse_json_result(switch_result)["success"] is False
+
+            after_result = await client.call_tool_mcp(
+                "execute_query", {"sql": "SELECT current_database()"}
+            )
+            after_data = parse_json_result(after_result)
+            assert after_data["success"] is True
+            assert after_data["rows"][0][0] == before_database
+
 
 class TestSwitchDatabaseConnectionReadOnlyServer:
     """Test switch_database_connection respects server read-only mode."""
